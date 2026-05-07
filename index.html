@@ -11,19 +11,19 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
-    <style>
-      #login-page {
+  </head>
+  <body>
+    <!-- LOGIN PAGE -->
+    <div
+      id="login-page"
+      style="
         display: flex;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
         background: var(--bg);
-      }
-    </style>
-  </head>
-  <body>
-    <!-- LOGIN PAGE -->
-    <div id="login-page">
+      "
+    >
       <div
         style="
           width: 100%;
@@ -35,19 +35,16 @@
         "
       >
         <div style="text-align: center; margin-bottom: 30px">
-          <h1 style="color: #c0392b; margin-bottom: 8px">
-            HIV/AIDS Repository
-          </h1>
-          <p style="color: var(--text3)">Department of Health Philippines</p>
+          <h1 style="color: #c0392b">HIV/AIDS Repository</h1>
+          <p style="color: var(--text3)">Department of Health • Philippines</p>
         </div>
-
         <h2 style="text-align: center; margin-bottom: 25px">Sign In</h2>
 
         <input
           type="email"
           id="login-email"
           class="fi-input"
-          placeholder="Email Address"
+          placeholder="Email"
           style="width: 100%; margin-bottom: 15px"
           value="admin@doh.gov.ph"
         />
@@ -71,23 +68,65 @@
             border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            margin-bottom: 15px;
           "
         >
           Sign In
         </button>
 
-        <p style="text-align: center; color: #64748b; font-size: 14px">
-          Default: <strong>admin@doh.gov.ph</strong> /
-          <strong>DOHAdmin2025!</strong>
+        <p
+          style="
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #64748b;
+          "
+        >
+          Demo Account:<br />
+          <strong>admin@doh.gov.ph</strong> / <strong>DOHAdmin2025!</strong>
         </p>
       </div>
     </div>
 
     <!-- MAIN APPLICATION -->
     <div id="main-app" style="display: none">
-      <!-- Your original sidebar and content will go here -->
-      <!-- Paste your previous main shell content here if needed, but we'll handle it in JS -->
+      <div class="shell">
+        <!-- Paste your original sidebar + main content here -->
+        <!-- For now, we'll use a simple placeholder. You can copy your old shell content -->
+        <nav class="sidebar" id="sidebar">
+          <!-- Your sidebar content -->
+          <div class="sb-brand">
+            <div class="sb-logo"><i class="fas fa-heartbeat"></i></div>
+            <div>
+              <div class="sb-name">HIV/AIDS Repository</div>
+              <div class="sb-sub">DOH Philippines</div>
+            </div>
+          </div>
+          <!-- Add rest of sidebar items -->
+        </nav>
+
+        <div class="main">
+          <!-- Your topbar and content here -->
+          <div class="topbar">
+            <div class="hbg" onclick="toggleSB()">☰</div>
+            <div class="tb-title" id="pg-title">Dashboard Overview</div>
+            <div class="tb-right">
+              <button onclick="toggleDark()" class="ib">🌙</button>
+              <button
+                onclick="logoutUser()"
+                class="ib"
+                style="background: #c0392b; color: white"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+
+          <div class="content">
+            <!-- Your pages (p-dash, p-repo, etc.) go here -->
+            <!-- You can copy them from your previous index.html -->
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="assets/js/app.js"></script>
