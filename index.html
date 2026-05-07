@@ -4,194 +4,90 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HIV/AIDS Surveillance System | DOH Philippines</title>
-
-    <!-- Supabase -->
-    <script
-      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-      defer
-    ></script>
-
-    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
     <link rel="stylesheet" href="assets/css/style.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+    <style>
+      #login-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: var(--bg);
+      }
+    </style>
   </head>
   <body>
-    <div class="shell" id="shell">
-      <!-- SIDEBAR -->
-      <nav class="sidebar" id="sidebar">
-        <div class="sb-brand">
-          <div class="sb-logo">
-            <i class="fas fa-heartbeat"></i>
-          </div>
-          <div>
-            <div class="sb-name">HIV/AIDS Repository</div>
-            <div class="sb-sub">DOH Philippines • HARP</div>
-          </div>
+    <!-- LOGIN PAGE -->
+    <div id="login-page">
+      <div
+        style="
+          width: 100%;
+          max-width: 420px;
+          padding: 40px;
+          background: var(--surface);
+          border-radius: 16px;
+          border: 1px solid var(--border);
+        "
+      >
+        <div style="text-align: center; margin-bottom: 30px">
+          <h1 style="color: #c0392b; margin-bottom: 8px">
+            HIV/AIDS Repository
+          </h1>
+          <p style="color: var(--text3)">Department of Health Philippines</p>
         </div>
 
-        <div class="sb-nav">
-          <div class="sb-section">Main</div>
-          <div class="sb-item on" onclick="nav('dash', this)">
-            <i class="fas fa-tachometer-alt"></i> Dashboard
-          </div>
-          <div class="sb-item" onclick="nav('repo', this)">
-            <i class="fas fa-database"></i> Data Repository
-          </div>
-          <div class="sb-item" onclick="nav('ai', this)">
-            <i class="fas fa-brain"></i> AI Insights
-          </div>
+        <h2 style="text-align: center; margin-bottom: 25px">Sign In</h2>
 
-          <div class="sb-section">Management</div>
-          <div class="sb-item" onclick="nav('reports', this)">
-            <i class="fas fa-file-alt"></i> Reports
-          </div>
-          <div class="sb-item" onclick="nav('alerts', this)">
-            <i class="fas fa-bell"></i> Alerts <span class="sb-badge">3</span>
-          </div>
-        </div>
+        <input
+          type="email"
+          id="login-email"
+          class="fi-input"
+          placeholder="Email Address"
+          style="width: 100%; margin-bottom: 15px"
+          value="admin@doh.gov.ph"
+        />
+        <input
+          type="password"
+          id="login-password"
+          class="fi-input"
+          placeholder="Password"
+          style="width: 100%; margin-bottom: 20px"
+          value="DOHAdmin2025!"
+        />
 
-        <div class="sb-foot">
-          <select id="role-sel" class="role-sel" onchange="changeRole()">
-            <option value="admin">Administrator</option>
-            <option value="officer">Health Officer</option>
-            <option value="researcher">Researcher</option>
-          </select>
-        </div>
-      </nav>
+        <button
+          onclick="loginUser()"
+          style="
+            width: 100%;
+            padding: 14px;
+            background: #c0392b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 15px;
+          "
+        >
+          Sign In
+        </button>
 
-      <!-- MAIN CONTENT -->
-      <div class="main">
-        <div class="topbar">
-          <div class="hbg" onclick="toggleSB()">
-            <span></span><span></span><span></span>
-          </div>
-          <div class="tb-title" id="pg-title">Dashboard Overview</div>
-
-          <div class="tb-right">
-            <button onclick="toggleDark()" class="ib" title="Toggle Theme">
-              🌙
-            </button>
-            <div class="ib alert-dot"><i class="fas fa-bell"></i></div>
-            <div class="ib"><i class="fas fa-user"></i></div>
-          </div>
-        </div>
-
-        <div class="content">
-          <!-- DASHBOARD -->
-          <div id="p-dash" class="page on">
-            <div class="g4" style="margin-bottom: 24px">
-              <div class="card">
-                <div class="ct">Total Active Cases</div>
-                <div class="sv" id="total-cases">84,912</div>
-                <div class="ss">
-                  +8% from last year <span class="sup">↑</span>
-                </div>
-              </div>
-              <div class="card">
-                <div class="ct">On ART</div>
-                <div class="sv" id="art-cases">48,270</div>
-                <div class="ss">57% Coverage <span class="sdn">↑</span></div>
-              </div>
-              <div class="card">
-                <div class="ct">New Cases 2025</div>
-                <div class="sv">1,843</div>
-                <div class="ss">Q1 2025</div>
-              </div>
-              <div class="card">
-                <div class="ct">Most Affected</div>
-                <div class="sv">NCR</div>
-                <div class="ss">33.5% of cases</div>
-              </div>
-            </div>
-
-            <div class="g73">
-              <div class="card">
-                <div class="ct">Case Trend (2019–2025)</div>
-                <div class="chart-wrap">
-                  <canvas id="trendChart" height="140"></canvas>
-                </div>
-              </div>
-              <div class="card">
-                <div class="ct">Transmission Mode</div>
-                <div class="chart-wrap">
-                  <canvas id="transChart" height="140"></canvas>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- DATA REPOSITORY -->
-          <div id="p-repo" class="page">
-            <div class="card">
-              <div class="fi-wrap">
-                <div class="si-wrap">
-                  <i class="fas fa-search si-ico"></i>
-                  <input
-                    type="text"
-                    id="repo-search"
-                    class="fi-input"
-                    placeholder="Search case code..."
-                    onkeyup="filterRepo()"
-                  />
-                </div>
-                <select id="f-year" class="fi-sel" onchange="filterRepo()">
-                  <option value="">All Years</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                </select>
-              </div>
-
-              <table class="dtable">
-                <thead>
-                  <tr>
-                    <th>Case Code</th>
-                    <th>Year</th>
-                    <th>Age Group</th>
-                    <th>Gender</th>
-                    <th>Region</th>
-                    <th>Facility</th>
-                    <th>ART Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="repo-body"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- AI INSIGHTS -->
-          <div id="p-ai" class="page">
-            <div class="chat-wrap">
-              <div class="chat-msgs" id="ai-msgs"></div>
-              <div class="chat-in">
-                <input
-                  type="text"
-                  id="ai-inp"
-                  class="chat-inp"
-                  placeholder="Ask about trends, regions, ART coverage..."
-                  onkeypress="if (event.key === 'Enter') sendAI();"
-                />
-                <button class="chat-send" onclick="sendAI()">
-                  <i class="fas fa-paper-plane"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Placeholder for other pages -->
-          <div id="p-reports" class="page">
-            <div class="card"><h2>Reports Module Coming Soon</h2></div>
-          </div>
-          <div id="p-alerts" class="page">
-            <div class="card"><h2>Alerts Module Coming Soon</h2></div>
-          </div>
-        </div>
+        <p style="text-align: center; color: #64748b; font-size: 14px">
+          Default: <strong>admin@doh.gov.ph</strong> /
+          <strong>DOHAdmin2025!</strong>
+        </p>
       </div>
+    </div>
+
+    <!-- MAIN APPLICATION -->
+    <div id="main-app" style="display: none">
+      <!-- Your original sidebar and content will go here -->
+      <!-- Paste your previous main shell content here if needed, but we'll handle it in JS -->
     </div>
 
     <script src="assets/js/app.js"></script>
