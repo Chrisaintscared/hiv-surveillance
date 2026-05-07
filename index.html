@@ -11,89 +11,96 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+    <style>
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
+      .nav-item {
+        cursor: pointer;
+      }
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .modal-content {
+        background: var(--surface);
+        padding: 24px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+    </style>
   </head>
   <body>
     <!-- LOGIN PAGE -->
     <div
       id="login-page"
-      style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        background: var(--bg);
-      "
+      class="flex items-center justify-center min-h-screen bg-[var(--bg)]"
     >
       <div
-        style="
-          width: 100%;
-          max-width: 420px;
-          padding: 40px;
-          background: var(--surface);
-          border-radius: 16px;
-          border: 1px solid var(--border);
-        "
+        class="w-full max-w-md p-10 bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-xl"
       >
-        <div style="text-align: center; margin-bottom: 30px">
-          <h1 style="color: #c0392b">HIV/AIDS Repository</h1>
-          <p style="color: var(--text3)">Department of Health • Philippines</p>
+        <div class="text-center mb-8">
+          <div
+            class="inline-flex items-center justify-center w-20 h-20 bg-[#c0392b] text-white rounded-2xl text-4xl mb-4"
+          >
+            <i class="fas fa-heartbeat"></i>
+          </div>
+          <h1 class="text-3xl font-bold text-[#c0392b]">HIV/AIDS Repository</h1>
+          <p class="text-[var(--text3)] mt-1">
+            Department of Health • Philippines
+          </p>
         </div>
-        <h2 style="text-align: center; margin-bottom: 25px">Sign In</h2>
 
-        <input
-          type="email"
-          id="login-email"
-          class="fi-input"
-          placeholder="Email"
-          style="width: 100%; margin-bottom: 15px"
-          value="admin@doh.gov.ph"
-        />
-        <input
-          type="password"
-          id="login-password"
-          class="fi-input"
-          placeholder="Password"
-          style="width: 100%; margin-bottom: 20px"
-          value="DOHAdmin2025!"
-        />
+        <div class="space-y-5">
+          <input
+            type="email"
+            id="login-email"
+            class="fi-input w-full"
+            placeholder="Email"
+            value="admin@doh.gov.ph"
+          />
+          <input
+            type="password"
+            id="login-password"
+            class="fi-input w-full"
+            placeholder="Password"
+            value="DOHAdmin2025!"
+          />
 
-        <button
-          onclick="loginUser()"
-          style="
-            width: 100%;
-            padding: 14px;
-            background: #c0392b;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-          "
-        >
-          Sign In
-        </button>
+          <button
+            onclick="loginUser()"
+            class="w-full py-4 bg-[#c0392b] hover:bg-[#a22d22] text-white font-semibold rounded-xl transition"
+          >
+            Sign In
+          </button>
+        </div>
 
-        <p
-          style="
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #64748b;
-          "
-        >
-          Demo Account:<br />
-          <strong>admin@doh.gov.ph</strong> / <strong>DOHAdmin2025!</strong>
-        </p>
+        <div class="mt-8 text-center text-sm text-[var(--text3)]">
+          Demo: <strong>admin@doh.gov.ph</strong> /
+          <strong>DOHAdmin2025!</strong>
+        </div>
       </div>
     </div>
 
-    <!-- MAIN APPLICATION -->
-    <div id="main-app" style="display: none">
-      <div class="shell">
-        <!-- Paste your original sidebar + main content here -->
-        <!-- For now, we'll use a simple placeholder. You can copy your old shell content -->
+    <!-- MAIN APP -->
+    <div id="main-app" class="hidden h-screen flex flex-col">
+      <div class="shell h-full">
+        <!-- SIDEBAR -->
         <nav class="sidebar" id="sidebar">
-          <!-- Your sidebar content -->
           <div class="sb-brand">
             <div class="sb-logo"><i class="fas fa-heartbeat"></i></div>
             <div>
@@ -101,30 +108,300 @@
               <div class="sb-sub">DOH Philippines</div>
             </div>
           </div>
-          <!-- Add rest of sidebar items -->
-        </nav>
 
-        <div class="main">
-          <!-- Your topbar and content here -->
-          <div class="topbar">
-            <div class="hbg" onclick="toggleSB()">☰</div>
-            <div class="tb-title" id="pg-title">Dashboard Overview</div>
-            <div class="tb-right">
-              <button onclick="toggleDark()" class="ib">🌙</button>
-              <button
-                onclick="logoutUser()"
-                class="ib"
-                style="background: #c0392b; color: white"
-              >
-                Logout
-              </button>
+          <div class="sb-nav">
+            <div class="sb-section">Core</div>
+            <div
+              class="sb-item on nav-item"
+              data-page="dashboard"
+              onclick="navigateTo('dashboard', this)"
+            >
+              <i class="fas fa-tachometer-alt w-5"></i>
+              <span>Dashboard</span>
+            </div>
+            <div
+              class="sb-item nav-item"
+              data-page="repository"
+              onclick="navigateTo('repository', this)"
+            >
+              <i class="fas fa-database w-5"></i>
+              <span>Case Repository</span>
+            </div>
+
+            <div class="sb-section mt-6">Analytics</div>
+            <div
+              class="sb-item nav-item"
+              data-page="analytics"
+              onclick="navigateTo('analytics', this)"
+            >
+              <i class="fas fa-chart-pie w-5"></i>
+              <span>Analytics &amp; Reports</span>
+            </div>
+            <div
+              class="sb-item nav-item"
+              data-page="facilities"
+              onclick="navigateTo('facilities', this)"
+            >
+              <i class="fas fa-hospital w-5"></i>
+              <span>Facilities</span>
+            </div>
+
+            <div class="sb-section mt-6">Management</div>
+            <div
+              class="sb-item nav-item"
+              onclick="alert('User management coming soon')"
+            >
+              <i class="fas fa-users w-5"></i>
+              <span>Users</span>
+            </div>
+            <div class="sb-item nav-item" onclick="alert('Alerts coming soon')">
+              <i class="fas fa-bell w-5"></i>
+              <span>Alerts <span class="sb-badge">3</span></span>
             </div>
           </div>
 
-          <div class="content">
-            <!-- Your pages (p-dash, p-repo, etc.) go here -->
-            <!-- You can copy them from your previous index.html -->
+          <div class="sb-foot">
+            <div class="flex items-center gap-3 text-sm">
+              <div
+                class="w-9 h-9 bg-teal-500 rounded-full flex items-center justify-center text-white text-sm font-bold"
+              >
+                AS
+              </div>
+              <div>
+                <div class="font-medium" id="user-name">Admin User</div>
+                <div class="text-xs text-[var(--text3)]" id="user-role">
+                  System Administrator
+                </div>
+              </div>
+            </div>
+            <button
+              onclick="logoutUser()"
+              class="mt-6 w-full py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-xl text-sm flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
           </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div class="main flex-1 flex flex-col overflow-hidden">
+          <!-- TOPBAR -->
+          <div class="topbar">
+            <div class="hbg" onclick="toggleSB()">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="tb-title" id="page-title">Dashboard Overview</div>
+
+            <div class="tb-right flex-1 flex justify-end items-center gap-4">
+              <button onclick="toggleDark()" class="ib">🌗</button>
+              <button
+                onclick="sendAI()"
+                class="ib bg-gradient-to-r from-purple-500 to-violet-600 text-white"
+              >
+                <i class="fas fa-robot"></i>
+              </button>
+              <div class="text-sm text-right">
+                <div class="font-medium">May 2026</div>
+                <div class="text-xs text-teal-500">Live Data</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAGE CONTENTS -->
+          <div class="content overflow-auto flex-1">
+            <!-- DASHBOARD PAGE -->
+            <div id="page-dashboard" class="page active">
+              <div class="g4">
+                <div class="card">
+                  <div class="ct">
+                    <i class="fas fa-users"></i> Active Cases
+                  </div>
+                  <div class="sv" id="total-cases">1,248</div>
+                  <div class="ss">
+                    +12 from last month <span class="sup">↑</span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="ct"><i class="fas fa-pills"></i> On ART</div>
+                  <div class="sv text-teal-500" id="art-cases">892</div>
+                  <div class="ss" id="art-pct">71.5% coverage</div>
+                </div>
+                <div class="card">
+                  <div class="ct">
+                    <i class="fas fa-calendar"></i> This Year (2025)
+                  </div>
+                  <div class="sv" id="cases-this-year">187</div>
+                  <div class="ss">New diagnoses</div>
+                </div>
+                <div class="card">
+                  <div class="ct">
+                    <i class="fas fa-skull-crossbones"></i> Deceased
+                  </div>
+                  <div class="sv text-red-500" id="total-deceased">43</div>
+                  <div class="ss">Since 2023</div>
+                </div>
+              </div>
+
+              <div class="g73 mt-8">
+                <div class="card">
+                  <div class="flex justify-between items-center mb-4">
+                    <div class="font-semibold">Regional Distribution</div>
+                  </div>
+                  <div class="chart-wrap">
+                    <canvas id="regionChart"></canvas>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="font-semibold mb-4">Recent Activity</div>
+                  <div id="recent-activity" class="space-y-3 text-sm"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- REPOSITORY PAGE -->
+            <div id="page-repository" class="page">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Case Repository</h2>
+                <div class="flex gap-3">
+                  <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Search case code..."
+                    class="fi-input w-72"
+                    onkeyup="if (event.key === 'Enter') filterCases();"
+                  />
+                  <button
+                    onclick="filterCases()"
+                    class="px-6 py-3 bg-[#c0392b] text-white rounded-xl"
+                  >
+                    Search
+                  </button>
+                </div>
+              </div>
+
+              <div class="card">
+                <table class="dtable">
+                  <thead>
+                    <tr>
+                      <th>Case Code</th>
+                      <th>Year</th>
+                      <th>Age</th>
+                      <th>Gender</th>
+                      <th>Region</th>
+                      <th>Facility</th>
+                      <th>ART Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="repo-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ANALYTICS PAGE (New Page) -->
+            <div id="page-analytics" class="page">
+              <h2 class="text-2xl font-semibold mb-6">
+                Analytics &amp; Reports
+              </h2>
+
+              <div class="g4">
+                <div class="card">
+                  <div class="ct">ART Coverage Trend</div>
+                  <div class="chart-wrap h-80">
+                    <canvas id="artTrendChart"></canvas>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="ct">Transmission Modes</div>
+                  <div class="chart-wrap h-80">
+                    <canvas id="transmissionChart"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-8 card">
+                <h3 class="font-semibold mb-4">Quick Reports</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <button
+                    onclick="generateReport('annual')"
+                    class="p-6 border border-[var(--border)] hover:border-red-300 rounded-2xl text-left transition"
+                  >
+                    <i class="fas fa-file-alt text-2xl text-red-500 mb-3"></i>
+                    <div class="font-medium">Annual Summary 2025</div>
+                    <div class="text-xs text-[var(--text3)] mt-1">
+                      PDF • 2.4 MB
+                    </div>
+                  </button>
+                  <button
+                    onclick="generateReport('regional')"
+                    class="p-6 border border-[var(--border)] hover:border-red-300 rounded-2xl text-left transition"
+                  >
+                    <i
+                      class="fas fa-map-marker-alt text-2xl text-red-500 mb-3"
+                    ></i>
+                    <div class="font-medium">Regional Breakdown</div>
+                    <div class="text-xs text-[var(--text3)] mt-1">
+                      Excel • Latest
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- FACILITIES PAGE -->
+            <div id="page-facilities" class="page">
+              <h2 class="text-2xl font-semibold mb-6">Treatment Facilities</h2>
+              <div class="card">
+                <table class="dtable">
+                  <thead>
+                    <tr>
+                      <th>Facility</th>
+                      <th>Region</th>
+                      <th>Type</th>
+                      <th>Cases</th>
+                      <th>ART Hub</th>
+                      <th>Last Report</th>
+                    </tr>
+                  </thead>
+                  <tbody id="facilities-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE MODAL -->
+    <div id="case-modal" class="modal">
+      <div class="modal-content">
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <div class="text-xs text-[var(--text3)]">CASE DETAILS</div>
+            <div id="modal-case-code" class="text-2xl font-bold"></div>
+          </div>
+          <button
+            onclick="closeModal()"
+            class="text-3xl leading-none text-[var(--text3)] hover:text-red-500"
+          >
+            &times;
+          </button>
+        </div>
+        <div id="modal-content" class="space-y-6 text-sm"></div>
+        <div class="mt-8 flex gap-3">
+          <button
+            onclick="closeModal()"
+            class="flex-1 py-4 border border-[var(--border)] rounded-2xl"
+          >
+            Close
+          </button>
+          <button
+            onclick="alert('Export functionality coming soon')"
+            class="flex-1 py-4 bg-[#c0392b] text-white rounded-2xl"
+          >
+            Export PDF
+          </button>
         </div>
       </div>
     </div>
