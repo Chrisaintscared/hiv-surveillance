@@ -178,7 +178,7 @@ function runCinematicLoader() {
 // 6. AUTH GUARD (FIXED VERCEL LOOP)
 document.addEventListener('DOMContentLoaded', async () => {
 
-    await new Promise(r => setTimeout(r, 100)); // prevent race condition
+    await new Promise(r => setTimeout(r, 150));
 
     const {
         data: { session }
@@ -186,8 +186,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const path = window.location.pathname;
     const page = path.split('/').pop();
-    const isLoginPage = page === 'login.html' || page === '' || page === '/';
 
+    const isLoginPage =
+        page === 'login.html' ||
+        page === '' ||
+        path === '/' ||
+        path.endsWith('/login.html');
+
+    // =========================
+    // IF USER IS LOGGED IN
+    // =========================
     if (session) {
 
         const { data: profile } = await supabaseClient
@@ -196,21 +204,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             .eq('id', session.user.id)
             .single();
 
+        // Prevent redirect loop on login page
         if (isLoginPage) {
-            window.location.href =
+            window.location.replace(
                 profile?.role === 'admin'
                     ? "/admin_dashboard.html"
-                    : "/user_dashboard.html";
-        } else {
-            loadDashboard();
-            runCinematicLoader();
+                    : "/user_dashboard.html"
+            );
+            return;
         }
 
-    } else {
+        // Already inside dashboard
+        loadDashboard();
+        runCinematicLoader();
+        return;
+    }
 
-        // IMPORTANT FIX: only redirect if NOT already on login page
-        if (!isLoginPage) {
-            window.location.href = "login.html";
-        }
+    // =========================
+    // NO SESSION (NOT LOGGED IN)
+    // =========================
+    if (!isLoginPage) {
+        window.location.replace("/login.html");
     }
 });
