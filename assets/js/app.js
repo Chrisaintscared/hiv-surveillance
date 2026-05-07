@@ -1,9 +1,3 @@
-/**
- * DOH HIV Surveillance System - Core Logic
- * Handles UUID-based Auth, Role Redirects, and Dashboard Sync
- */
-
-// 1. UI & NAVIGATION
 function toggleSB() {
     const sidebar = document.getElementById('sidebar');
     if (sidebar) sidebar.classList.toggle('off');
@@ -29,7 +23,6 @@ function toggleAuth() {
     }
 }
 
-// 2. MASTER AUTH FUNCTION
 async function handleAuth() {
     const isLogin = document.getElementById('auth-title').innerText === 'SIGN IN';
     const email = document.getElementById('login-email').value.trim();
@@ -37,14 +30,14 @@ async function handleAuth() {
     const btn = document.getElementById('auth-btn');
 
     if (!email || !password) return alert("Please fill in all fields.");
-    
+
     btn.disabled = true;
     const originalText = btn.innerText;
     btn.innerText = isLogin ? "Authenticating..." : "Creating Account...";
 
     if (isLogin) {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        
+
         if (error) {
             alert("Login Failed: " + error.message);
             btn.disabled = false;
@@ -65,19 +58,19 @@ async function handleAuth() {
             }
         }
     } else {
-        const { data, error } = await supabaseClient.auth.signUp({ 
-            email, 
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
             password,
             options: { data: { full_name: "Health Officer" } }
         });
-        
+
         if (error) {
             alert(error.message);
             btn.disabled = false;
             btn.innerText = originalText;
         } else {
             alert("Registration successful! You can now sign in.");
-            toggleAuth(); 
+            toggleAuth();
             btn.disabled = false;
             btn.innerText = "Sign In";
         }
@@ -89,7 +82,6 @@ async function logoutUser() {
     window.location.href = "login.html";
 }
 
-// 3. DASHBOARD DATA LOADING
 async function loadDashboard() {
     try {
         const { data: summary } = await supabaseClient.from('v_dashboard_summary').select('*').single();
@@ -126,12 +118,11 @@ async function loadDashboard() {
     }
 }
 
-// 4. CINEMATIC LOADER
 function runCinematicLoader() {
     const screen = document.getElementById('loading-screen');
     const bar = document.getElementById('ls-bar');
     const statusText = document.getElementById('ls-status');
-    
+
     if (!screen) return;
 
     const steps = [
@@ -154,16 +145,15 @@ function runCinematicLoader() {
     }, 350);
 }
 
-// 5. SESSION INITIALIZER — SAFE, NO REDIRECT LOOPS
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
     const path = window.location.pathname;
 
-    // Identify which "zone" this page belongs to
     const isLoginPage = path.includes('login') || path === '/' || path === '';
+    const isProtectedPage = path.includes('user_') || path.includes('admin_');
     const isAdminPage = path.includes('admin_dashboard');
-    const isUserPage = path.includes('user_dashboard');
-    const isDashboardPage = isAdminPage || isUserPage;
+    const isUserDashboard = path.includes('user_dashboard');
+    const isDashboardPage = isAdminPage || isUserDashboard;
 
     if (session) {
         const { data: profile } = await supabaseClient
@@ -175,19 +165,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const role = profile?.role ?? 'user';
 
         if (isLoginPage) {
-            // Logged-in user hit the login page — send them home
             window.location.href = role === 'admin' ? "admin_dashboard.html" : "user_dashboard.html";
-
-        } else if (isDashboardPage) {
-            // ✅ Already on a dashboard — just load data, DO NOT redirect
+        } else if (isProtectedPage) {
             loadDashboard();
-            runCinematicLoader();
+            if (isDashboardPage) runCinematicLoader();
         }
-        // Any other page: do nothing, let it render normally
-
     } else {
-        // No session — only redirect if on a protected page
-        if (isDashboardPage) {
+        if (isProtectedPage) {
             window.location.href = 'login.html';
         }
     }

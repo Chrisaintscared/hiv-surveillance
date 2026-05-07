@@ -170,14 +170,21 @@
         >
           Main Navigation
         </p>
-        <a href="#" class="nav-item active"
+        <!-- ✅ FIXED: Dashboard link points to itself (active) -->
+        <a href="user_dashboard.html" class="nav-item active"
           ><i class="fas fa-grid-2"></i> Dashboard</a
         >
-        <a href="#" class="nav-item"
+        <!-- ✅ FIXED: Repository link now navigates to user_repository.html -->
+        <a href="user_repository.html" class="nav-item"
           ><i class="fas fa-folder-tree"></i> My Repository</a
         >
-        <a href="#" class="nav-item"
+        <!-- ✅ FIXED: Statistics link now points to user_statistics.html -->
+        <a href="user_statistics.html" class="nav-item"
           ><i class="fas fa-chart-line"></i> Statistics</a
+        >
+        <!-- ✅ ADDED: Profile link for consistency with repository page -->
+        <a href="user_profile.html" class="nav-item"
+          ><i class="fas fa-user-circle"></i> My Profile</a
         >
       </div>
 
@@ -260,9 +267,18 @@
             <h4 class="font-bold text-white uppercase tracking-tighter">
               Case Records
             </h4>
-            <span class="text-[10px] font-mono text-slate-500"
-              >LAST_SYNC: 2026-05-08</span
-            >
+            <div class="flex items-center gap-4">
+              <span class="text-[10px] font-mono text-slate-500"
+                >LAST_SYNC: 2026-05-08</span
+              >
+              <!-- ✅ ADDED: Quick link to full repository from dashboard table -->
+              <a
+                href="user_repository.html"
+                class="text-[10px] font-bold text-red-500 hover:text-red-400 transition uppercase tracking-widest"
+              >
+                View All <i class="fas fa-arrow-right ml-1"></i>
+              </a>
+            </div>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left">
