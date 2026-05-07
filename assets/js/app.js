@@ -1,6 +1,6 @@
 /**
- * DOH HIV Surveillance System - Core Logic (FIXED)
- * Fixes Vercel redirect loop + Supabase auth race conditions
+ * DOH HIV Surveillance System - Core Logic
+ * Handles UUID-based Auth, Role Redirects, and Dashboard Sync
  */
 
 // 1. UI & NAVIGATION
@@ -29,7 +29,7 @@ function toggleAuth() {
     }
 }
 
-// 2. AUTH HANDLER
+// 2. MASTER AUTH FUNCTION
 async function handleAuth() {
     const isLogin = document.getElementById('auth-title').innerText === 'SIGN IN';
     const email = document.getElementById('login-email').value.trim();
@@ -37,85 +37,81 @@ async function handleAuth() {
     const btn = document.getElementById('auth-btn');
 
     if (!email || !password) return alert("Please fill in all fields.");
-
+    
     btn.disabled = true;
     const originalText = btn.innerText;
     btn.innerText = isLogin ? "Authenticating..." : "Creating Account...";
 
-    try {
-        if (isLogin) {
-            const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email,
-                password
-            });
-
-            if (error) throw error;
-
-            const { data: profile } = await supabaseClient
+    if (isLogin) {
+        // --- LOGIN LOGIC ---
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        
+        if (error) {
+            alert("Login Failed: " + error.message);
+            btn.disabled = false;
+            btn.innerText = originalText;
+        } else {
+            console.log("Auth Success. Checking SQL Profile for UUID:", data.user.id);
+            
+            // FETCH ROLE FROM YOUR UUID-SYNCED USERS TABLE
+            const { data: profile, error: profileError } = await supabaseClient
                 .from('users')
                 .select('role')
                 .eq('id', data.user.id)
                 .single();
 
-            if (!profile) {
-                window.location.href = "/user_dashboard.html";
-                return;
-            }
-
-            window.location.href =
-                profile.role === 'admin'
-                    ? "/admin_dashboard.html"
-                    : "/user_dashboard.html";
-
-        } else {
-            const { error } = await supabaseClient.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { full_name: "Health Officer" }
+            if (profileError) {
+                console.error("SQL Profile Not Found. Ensure trigger or manual sync is active.", profileError);
+                // Fallback to user dashboard if role record is missing
+                window.location.href = "user_dashboard.html";
+            } else {
+                console.log("Verified Role:", profile.role);
+                // REDIRECTION GATE
+                if (profile.role === 'admin') {
+                    window.location.href = "admin_dashboard.html";
+                } else {
+                    window.location.href = "user_dashboard.html";
                 }
-            });
-
-            if (error) throw error;
-
-            alert("Registration successful! You can now sign in.");
-            toggleAuth();
+            }
         }
-
-    } catch (err) {
-        alert(err.message);
+    } else {
+        // --- REGISTRATION LOGIC ---
+        const { data, error } = await supabaseClient.auth.signUp({ 
+            email, 
+            password,
+            options: { data: { full_name: "Health Officer" } }
+        });
+        
+        if (error) {
+            alert(error.message);
+            btn.disabled = false;
+            btn.innerText = originalText;
+        } else {
+            alert("Registration successful! You can now sign in.");
+            toggleAuth(); 
+            btn.disabled = false;
+            btn.innerText = "Sign In";
+        }
     }
-
-    btn.disabled = false;
-    btn.innerText = originalText;
 }
 
-// 3. LOGOUT
 async function logoutUser() {
     await supabaseClient.auth.signOut();
     window.location.href = "login.html";
 }
 
-// 4. DASHBOARD LOADER
+// 3. DASHBOARD DATA LOADING
 async function loadDashboard() {
     try {
-        const { data: summary } = await supabaseClient
-            .from('v_dashboard_summary')
-            .select('*')
-            .single();
-
+        const { data: summary } = await supabaseClient.from('v_dashboard_summary').select('*').single();
         if (summary) {
-            const set = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.innerText = Number(val || 0).toLocaleString();
-            };
-
-            set('total-cases', summary.total_active_cases);
-            set('art-cases', summary.total_on_art);
-            set('new-cases', summary.cases_this_year);
-            set('deceased', summary.total_deceased);
+            if (document.getElementById('total-cases')) document.getElementById('total-cases').innerText = summary.total_active_cases.toLocaleString();
+            if (document.getElementById('art-cases')) document.getElementById('art-cases').innerText = summary.total_on_art.toLocaleString();
+            if (document.getElementById('new-cases')) document.getElementById('new-cases').innerText = summary.cases_this_year.toLocaleString();
+            if (document.getElementById('deceased')) document.getElementById('deceased').innerText = summary.total_deceased.toLocaleString();
         }
 
+        // Fetch Case Table Data
         const { data: cases } = await supabaseClient
             .from('hiv_cases')
             .select('*')
@@ -123,7 +119,6 @@ async function loadDashboard() {
             .limit(10);
 
         const tableBody = document.getElementById('repo-table');
-
         if (tableBody && cases) {
             tableBody.innerHTML = cases.map(c => `
                 <tr class="hover:bg-white/5 transition border-b border-white/5 text-sm">
@@ -138,18 +133,17 @@ async function loadDashboard() {
                 </tr>
             `).join('');
         }
-
     } catch (e) {
-        console.warn("Dashboard error:", e);
+        console.warn("Dashboard sync error:", e);
     }
 }
 
-// 5. LOADER
+// 4. CINEMATIC LOADER
 function runCinematicLoader() {
     const screen = document.getElementById('loading-screen');
     const bar = document.getElementById('ls-bar');
     const statusText = document.getElementById('ls-status');
-
+    
     if (!screen) return;
 
     const steps = [
@@ -160,70 +154,46 @@ function runCinematicLoader() {
     ];
 
     let step = 0;
-
     const interval = setInterval(() => {
         if (step >= steps.length) {
             clearInterval(interval);
-            setTimeout(() => screen.classList.add('hidden'), 600);
+            setTimeout(() => { screen.classList.add('hidden'); }, 600);
             return;
         }
-
         if (bar) bar.style.width = steps[step].pct + '%';
         if (statusText) statusText.innerText = steps[step].msg;
-
         step++;
     }, 350);
 }
 
-// 6. AUTH GUARD (FIXED VERCEL LOOP)
+// 5. SESSION INITIALIZER & AUTO-REDIRECT
 document.addEventListener('DOMContentLoaded', async () => {
-
-    await new Promise(r => setTimeout(r, 150));
-
-    const {
-        data: { session }
-    } = await supabaseClient.auth.getSession();
-
+    const { data: { session } } = await supabaseClient.auth.getSession();
     const path = window.location.pathname;
-    const page = path.split('/').pop();
+    const isLoginPage = path.includes('login.html') || path.endsWith('/');
 
-    const isLoginPage =
-        page === 'login.html' ||
-        page === '' ||
-        path === '/' ||
-        path.endsWith('/login.html');
-
-    // =========================
-    // IF USER IS LOGGED IN
-    // =========================
     if (session) {
-
+        // Confirm role on load/refresh to ensure security
         const { data: profile } = await supabaseClient
             .from('users')
             .select('role')
             .eq('id', session.user.id)
             .single();
-
-        // Prevent redirect loop on login page
+        
         if (isLoginPage) {
-            window.location.replace(
-                profile?.role === 'admin'
-                    ? "/admin_dashboard.html"
-                    : "/user_dashboard.html"
-            );
-            return;
+            // Logged in user hitting the login page gets redirected home
+            if (profile?.role === 'admin') {
+                window.location.href = "admin_dashboard.html";
+            } else {
+                window.location.href = "user_dashboard.html";
+            }
+        } else {
+            // Already on a dashboard? Initialize data
+            loadDashboard();
+            runCinematicLoader();
         }
-
-        // Already inside dashboard
-        loadDashboard();
-        runCinematicLoader();
-        return;
-    }
-
-    // =========================
-    // NO SESSION (NOT LOGGED IN)
-    // =========================
-    if (!isLoginPage) {
-        window.location.replace("/login.html");
+    } else if (!isLoginPage) {
+        // No session? Forced to login
+        window.location.href = 'login.html';
     }
 });
