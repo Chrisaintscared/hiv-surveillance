@@ -1,7 +1,11 @@
-// ====================== HIV/AIDS Surveillance System - FINAL VERSION ======================
+// ====================== HIV/AIDS Surveillance System - Production (Vercel) ======================
 
 let supabaseClient = null;
 let chartsInitialized = false;
+
+// Supabase Configuration
+const SUPABASE_URL = 'https://vqwlrrhrgpiiualbetsf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_dHKEoT8RgBRTwTYuQCJsbA_VzFJ0Jae';
 
 // Initialize Supabase
 function initSupabase() {
@@ -10,12 +14,9 @@ function initSupabase() {
     return;
   }
 
-  supabaseClient = supabase.createClient(
-    'https://vqwlrrhrgpiiualbetsf.supabase.co',
-    'sb_publishable_dHKEoT8RgBRTwTYuQCJsbA_VzFJ0Jae'
-  );
-
-  console.log("✅ Supabase Client Initialized Successfully");
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  console.log("✅ Supabase Client Connected Successfully");
   loadDashboardData();
   loadRecentCases();
 }
@@ -25,52 +26,29 @@ async function loadDashboardData() {
   if (!supabaseClient) return;
 
   try {
-    // Total Active Cases
     const { count: totalCases } = await supabaseClient
       .from('hiv_cases')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true);
 
-    // On ART
     const { count: onArt } = await supabaseClient
       .from('hiv_cases')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true)
       .eq('art_status', 'on_art');
 
-    // New Cases 2025
     const { count: cases2025 } = await supabaseClient
       .from('hiv_cases')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true)
       .eq('year_reported', 2025);
 
-    // Most Affected Region (Dynamic)
-    const { data: regionStats } = await supabaseClient
-      .from('v_active_cases')
-      .select('region_name')
-      .eq('is_active', true);
-
-    let mostAffected = "NCR";
-    if (regionStats && regionStats.length > 0) {
-      const counts = {};
-      regionStats.forEach(r => {
-        counts[r.region_name] = (counts[r.region_name] || 0) + 1;
-      });
-      mostAffected = Object.keys(counts).reduce((a, b) => 
-        counts[a] > counts[b] ? a : b
-      );
-    }
-
-    // Update UI
+    // Update Dashboard Cards
     document.getElementById('total-cases').textContent = (totalCases || 0).toLocaleString();
     document.getElementById('art-cases').textContent = (onArt || 0).toLocaleString();
 
     const newCasesEl = document.querySelector('#p-dash .g4 .card:nth-child(3) .sv');
     if (newCasesEl) newCasesEl.textContent = (cases2025 || 0).toLocaleString();
-
-    const mostAffectedEl = document.querySelector('#p-dash .g4 .card:nth-child(4) .sv');
-    if (mostAffectedEl) mostAffectedEl.textContent = mostAffected;
 
   } catch (err) {
     console.error("Error loading dashboard data:", err);
@@ -99,7 +77,7 @@ async function loadRecentCases() {
     if (error) throw error;
     renderRepo(data || []);
   } catch (err) {
-    console.warn("Falling back to hiv_cases table...");
+    console.warn("View not available, using fallback...");
     try {
       const { data: fallback } = await supabaseClient
         .from('hiv_cases')
@@ -107,7 +85,7 @@ async function loadRecentCases() {
         .limit(20);
       renderRepo(fallback || []);
     } catch (e) {
-      console.error("Failed to load cases:", e);
+      console.error(e);
       renderRepo([]);
     }
   }
@@ -143,7 +121,7 @@ function renderRepo(data) {
 }
 
 function viewCase(caseCode) {
-  alert(`📋 Viewing Case: ${caseCode}\n\nFull case details coming soon.`);
+  alert(`📋 Viewing Case: ${caseCode}\n\nFull details coming soon.`);
 }
 
 // Navigation
@@ -213,12 +191,12 @@ function toggleDark() {
 function sendAI() {
   const input = document.getElementById('ai-inp');
   if (input.value.trim()) {
-    alert("🤖 AI Insights:\n\nThis feature will show real analysis of your data soon.");
+    alert("🤖 AI Assistant:\n\nReal AI insights coming soon!");
     input.value = '';
   }
 }
 
-// Initialize
+// Start the App
 window.onload = () => {
   initSupabase();
   initCharts();
