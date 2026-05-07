@@ -4,408 +4,300 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HIV/AIDS Surveillance System | DOH Philippines</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="assets/css/style.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+
     <style>
-      .page {
-        display: none;
+      :root {
+        --bg-dark: #0f172a;
+        --bg-gradient-end: #1e1133;
+        --primary-red: #c0392b;
+        --hover-red: #e74c3c;
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
       }
-      .page.active {
-        display: block;
+
+      body {
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        margin: 0;
+        padding: 0;
       }
-      .nav-item {
-        cursor: pointer;
-      }
-      .modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: none;
+
+      .hero {
+        background: linear-gradient(
+          135deg,
+          var(--bg-dark) 0%,
+          var(--bg-gradient-end) 100%
+        );
+        min-height: 100vh;
+        display: flex;
         align-items: center;
-        justify-content: center;
-        z-index: 1000;
+        position: relative;
+        overflow: hidden;
+        color: var(--text-main);
       }
-      .modal-content {
-        background: var(--surface);
-        padding: 24px;
-        border-radius: 12px;
-        width: 90%;
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
+
+      /* Immersive Radial Glare */
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 40% 30%,
+          rgba(192, 57, 43, 0.25),
+          transparent 70%
+        );
+        z-index: 1;
+      }
+
+      /* Floating Red Particles */
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(
+            2px 2px at 10px 10px,
+            rgba(192, 57, 43, 0.7),
+            rgba(0, 0, 0, 0)
+          ),
+          radial-gradient(
+            2px 2px at 200px 150px,
+            rgba(192, 57, 43, 0.5),
+            rgba(0, 0, 0, 0)
+          ),
+          radial-gradient(
+            2px 2px at 450px 300px,
+            rgba(192, 57, 43, 0.8),
+            rgba(0, 0, 0, 0)
+          );
+        background-size: 550px 550px;
+        z-index: 1;
+        opacity: 0.6;
+        animation: particleAnimation 60s linear infinite;
+      }
+
+      .content {
+        position: relative;
+        z-index: 2;
+      }
+
+      /* Glassmorphism Stat Box */
+      .stat-box {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px); /* Safari support */
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .stat-box:hover {
+        border-color: rgba(192, 57, 43, 0.4);
+        transform: translateY(-2px);
+      }
+
+      /* Red Primary Button */
+      .btn-get-started {
+        background: var(--primary-red);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .btn-get-started:hover {
+        background: var(--hover-red);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(192, 57, 43, 0.4);
+      }
+
+      /* Pulsing Text Effect for Crimson span */
+      .pulse-text {
+        color: var(--primary-red);
+        animation: textPulse 4s ease-in-out infinite;
+      }
+
+      /* Keyframes */
+      @keyframes particleAnimation {
+        from {
+          background-position: 0 0;
+        }
+        to {
+          background-position: 550px 550px;
+        }
+      }
+
+      @keyframes textPulse {
+        0%,
+        100% {
+          text-shadow: 0 0 5px rgba(192, 57, 43, 0);
+        }
+        50% {
+          text-shadow: 0 0 15px rgba(192, 57, 43, 0.5);
+        }
       }
     </style>
   </head>
   <body>
-    <!-- LOGIN PAGE -->
-    <div
-      id="login-page"
-      class="flex items-center justify-center min-h-screen bg-[var(--bg)]"
-    >
-      <div
-        class="w-full max-w-md p-10 bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-xl"
-      >
-        <div class="text-center mb-8">
+    <section class="hero">
+      <div class="max-w-6xl mx-auto px-6 py-20 content w-full">
+        <div class="max-w-2xl">
+          <!-- Agency Header -->
           <div
-            class="inline-flex items-center justify-center w-20 h-20 bg-[#c0392b] text-white rounded-2xl text-4xl mb-4"
+            class="flex items-center gap-3 mb-6 text-sm tracking-widest text-slate-400 font-medium"
           >
-            <i class="fas fa-heartbeat"></i>
+            <i class="fas fa-shield-alt text-[#c0392b]"></i>
+            REPUBLIC OF THE PHILIPPINES • DEPARTMENT OF HEALTH
           </div>
-          <h1 class="text-3xl font-bold text-[#c0392b]">HIV/AIDS Repository</h1>
-          <p class="text-[var(--text3)] mt-1">
-            Department of Health • Philippines
+
+          <!-- Main Headline -->
+          <h1
+            class="text-6xl md:text-7xl font-extrabold leading-none mb-6 tracking-tighter"
+          >
+            Real-Time<br />
+            <span class="pulse-text">HIV/AIDS Surveillance</span>
+          </h1>
+
+          <!-- Sub-headline -->
+          <p class="text-xl text-slate-300 mb-10 font-normal leading-relaxed">
+            Empowering data-driven decisions to eliminate HIV in the Philippines
+            through real-time monitoring and actionable insights.
           </p>
-        </div>
 
-        <div class="space-y-5">
-          <input
-            type="email"
-            id="login-email"
-            class="fi-input w-full"
-            placeholder="Email"
-            value="admin@doh.gov.ph"
-          />
-          <input
-            type="password"
-            id="login-password"
-            class="fi-input w-full"
-            placeholder="Password"
-            value="DOHAdmin2025!"
-          />
-
-          <button
-            onclick="loginUser()"
-            class="w-full py-4 bg-[#c0392b] hover:bg-[#a22d22] text-white font-semibold rounded-xl transition"
-          >
-            Sign In
-          </button>
-        </div>
-
-        <div class="mt-8 text-center text-sm text-[var(--text3)]">
-          Demo: <strong>admin@doh.gov.ph</strong> /
-          <strong>DOHAdmin2025!</strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div id="main-app" class="hidden h-screen flex flex-col">
-      <div class="shell h-full">
-        <!-- SIDEBAR -->
-        <nav class="sidebar" id="sidebar">
-          <div class="sb-brand">
-            <div class="sb-logo"><i class="fas fa-heartbeat"></i></div>
-            <div>
-              <div class="sb-name">HIV/AIDS Repository</div>
-              <div class="sb-sub">DOH Philippines</div>
-            </div>
-          </div>
-
-          <div class="sb-nav">
-            <div class="sb-section">Core</div>
-            <div
-              class="sb-item on nav-item"
-              data-page="dashboard"
-              onclick="navigateTo('dashboard', this)"
-            >
-              <i class="fas fa-tachometer-alt w-5"></i>
-              <span>Dashboard</span>
-            </div>
-            <div
-              class="sb-item nav-item"
-              data-page="repository"
-              onclick="navigateTo('repository', this)"
-            >
-              <i class="fas fa-database w-5"></i>
-              <span>Case Repository</span>
-            </div>
-
-            <div class="sb-section mt-6">Analytics</div>
-            <div
-              class="sb-item nav-item"
-              data-page="analytics"
-              onclick="navigateTo('analytics', this)"
-            >
-              <i class="fas fa-chart-pie w-5"></i>
-              <span>Analytics &amp; Reports</span>
-            </div>
-            <div
-              class="sb-item nav-item"
-              data-page="facilities"
-              onclick="navigateTo('facilities', this)"
-            >
-              <i class="fas fa-hospital w-5"></i>
-              <span>Facilities</span>
-            </div>
-
-            <div class="sb-section mt-6">Management</div>
-            <div
-              class="sb-item nav-item"
-              onclick="alert('User management coming soon')"
-            >
-              <i class="fas fa-users w-5"></i>
-              <span>Users</span>
-            </div>
-            <div class="sb-item nav-item" onclick="alert('Alerts coming soon')">
-              <i class="fas fa-bell w-5"></i>
-              <span>Alerts <span class="sb-badge">3</span></span>
-            </div>
-          </div>
-
-          <div class="sb-foot">
-            <div class="flex items-center gap-3 text-sm">
-              <div
-                class="w-9 h-9 bg-teal-500 rounded-full flex items-center justify-center text-white text-sm font-bold"
-              >
-                AS
-              </div>
-              <div>
-                <div class="font-medium" id="user-name">Admin User</div>
-                <div class="text-xs text-[var(--text3)]" id="user-role">
-                  System Administrator
-                </div>
-              </div>
-            </div>
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row gap-4 mb-16">
             <button
-              onclick="logoutUser()"
-              class="mt-6 w-full py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-xl text-sm flex items-center justify-center gap-2"
+              onclick="goToLogin()"
+              class="btn-get-started px-10 py-5 rounded-2xl text-lg font-semibold flex items-center justify-center gap-3 w-full sm:w-auto"
             >
-              <i class="fas fa-sign-out-alt"></i> Logout
+              Get Started
+              <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <button
+              onclick="window.location.href = 'index.html'"
+              class="px-8 py-5 border border-white/20 hover:bg-white/5 hover:border-white/30 rounded-2xl text-lg font-medium transition duration-300 w-full sm:w-auto"
+            >
+              View Demo
             </button>
           </div>
-        </nav>
 
-        <!-- MAIN CONTENT -->
-        <div class="main flex-1 flex flex-col overflow-hidden">
-          <!-- TOPBAR -->
-          <div class="topbar">
-            <div class="hbg" onclick="toggleSB()">
-              <span></span><span></span><span></span>
-            </div>
-            <div class="tb-title" id="page-title">Dashboard Overview</div>
-
-            <div class="tb-right flex-1 flex justify-end items-center gap-4">
-              <button onclick="toggleDark()" class="ib">🌗</button>
-              <button
-                onclick="sendAI()"
-                class="ib bg-gradient-to-r from-purple-500 to-violet-600 text-white"
+          <!-- Glassmorphism Stats -->
+          <div
+            class="stat-box p-8 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 shadow-2xl"
+          >
+            <!-- Active Cases -->
+            <div class="text-center px-4">
+              <div
+                class="text-5xl font-extrabold text-white mb-2 leading-none"
+                id="stat-cases"
               >
-                <i class="fas fa-robot"></i>
-              </button>
-              <div class="text-sm text-right">
-                <div class="font-medium">May 2026</div>
-                <div class="text-xs text-teal-500">Live Data</div>
+                1,248
+              </div>
+              <div
+                class="text-sm font-semibold uppercase tracking-widest text-slate-400"
+              >
+                Active Cases
+              </div>
+            </div>
+
+            <!-- On ART (Dividers) -->
+            <div class="text-center md:border-x border-white/10 px-4">
+              <div
+                class="text-5xl font-extrabold text-teal-400 mb-2 leading-none"
+                id="stat-art"
+              >
+                892
+              </div>
+              <div
+                class="text-sm font-semibold uppercase tracking-widest text-slate-400"
+              >
+                On ART
+              </div>
+            </div>
+
+            <!-- Regions -->
+            <div class="text-center px-4">
+              <div
+                class="text-5xl font-extrabold text-purple-400 mb-2 leading-none"
+                id="stat-regions"
+              >
+                17
+              </div>
+              <div
+                class="text-sm font-semibold uppercase tracking-widest text-slate-400"
+              >
+                Regions
               </div>
             </div>
           </div>
 
-          <!-- PAGE CONTENTS -->
-          <div class="content overflow-auto flex-1">
-            <!-- DASHBOARD PAGE -->
-            <div id="page-dashboard" class="page active">
-              <div class="g4">
-                <div class="card">
-                  <div class="ct">
-                    <i class="fas fa-users"></i> Active Cases
-                  </div>
-                  <div class="sv" id="total-cases">1,248</div>
-                  <div class="ss">
-                    +12 from last month <span class="sup">↑</span>
-                  </div>
-                </div>
-                <div class="card">
-                  <div class="ct"><i class="fas fa-pills"></i> On ART</div>
-                  <div class="sv text-teal-500" id="art-cases">892</div>
-                  <div class="ss" id="art-pct">71.5% coverage</div>
-                </div>
-                <div class="card">
-                  <div class="ct">
-                    <i class="fas fa-calendar"></i> This Year (2025)
-                  </div>
-                  <div class="sv" id="cases-this-year">187</div>
-                  <div class="ss">New diagnoses</div>
-                </div>
-                <div class="card">
-                  <div class="ct">
-                    <i class="fas fa-skull-crossbones"></i> Deceased
-                  </div>
-                  <div class="sv text-red-500" id="total-deceased">43</div>
-                  <div class="ss">Since 2023</div>
-                </div>
-              </div>
-
-              <div class="g73 mt-8">
-                <div class="card">
-                  <div class="flex justify-between items-center mb-4">
-                    <div class="font-semibold">Regional Distribution</div>
-                  </div>
-                  <div class="chart-wrap">
-                    <canvas id="regionChart"></canvas>
-                  </div>
-                </div>
-
-                <div class="card">
-                  <div class="font-semibold mb-4">Recent Activity</div>
-                  <div id="recent-activity" class="space-y-3 text-sm"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- REPOSITORY PAGE -->
-            <div id="page-repository" class="page">
-              <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold">Case Repository</h2>
-                <div class="flex gap-3">
-                  <input
-                    type="text"
-                    id="search-input"
-                    placeholder="Search case code..."
-                    class="fi-input w-72"
-                    onkeyup="if (event.key === 'Enter') filterCases();"
-                  />
-                  <button
-                    onclick="filterCases()"
-                    class="px-6 py-3 bg-[#c0392b] text-white rounded-xl"
-                  >
-                    Search
-                  </button>
-                </div>
-              </div>
-
-              <div class="card">
-                <table class="dtable">
-                  <thead>
-                    <tr>
-                      <th>Case Code</th>
-                      <th>Year</th>
-                      <th>Age</th>
-                      <th>Gender</th>
-                      <th>Region</th>
-                      <th>Facility</th>
-                      <th>ART Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="repo-body"></tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- ANALYTICS PAGE (New Page) -->
-            <div id="page-analytics" class="page">
-              <h2 class="text-2xl font-semibold mb-6">
-                Analytics &amp; Reports
-              </h2>
-
-              <div class="g4">
-                <div class="card">
-                  <div class="ct">ART Coverage Trend</div>
-                  <div class="chart-wrap h-80">
-                    <canvas id="artTrendChart"></canvas>
-                  </div>
-                </div>
-                <div class="card">
-                  <div class="ct">Transmission Modes</div>
-                  <div class="chart-wrap h-80">
-                    <canvas id="transmissionChart"></canvas>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-8 card">
-                <h3 class="font-semibold mb-4">Quick Reports</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <button
-                    onclick="generateReport('annual')"
-                    class="p-6 border border-[var(--border)] hover:border-red-300 rounded-2xl text-left transition"
-                  >
-                    <i class="fas fa-file-alt text-2xl text-red-500 mb-3"></i>
-                    <div class="font-medium">Annual Summary 2025</div>
-                    <div class="text-xs text-[var(--text3)] mt-1">
-                      PDF • 2.4 MB
-                    </div>
-                  </button>
-                  <button
-                    onclick="generateReport('regional')"
-                    class="p-6 border border-[var(--border)] hover:border-red-300 rounded-2xl text-left transition"
-                  >
-                    <i
-                      class="fas fa-map-marker-alt text-2xl text-red-500 mb-3"
-                    ></i>
-                    <div class="font-medium">Regional Breakdown</div>
-                    <div class="text-xs text-[var(--text3)] mt-1">
-                      Excel • Latest
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- FACILITIES PAGE -->
-            <div id="page-facilities" class="page">
-              <h2 class="text-2xl font-semibold mb-6">Treatment Facilities</h2>
-              <div class="card">
-                <table class="dtable">
-                  <thead>
-                    <tr>
-                      <th>Facility</th>
-                      <th>Region</th>
-                      <th>Type</th>
-                      <th>Cases</th>
-                      <th>ART Hub</th>
-                      <th>Last Report</th>
-                    </tr>
-                  </thead>
-                  <tbody id="facilities-body"></tbody>
-                </table>
-              </div>
-            </div>
+          <!-- Live Monitoring Footer -->
+          <div
+            class="mt-12 flex items-center gap-3 text-sm text-slate-400 font-medium"
+          >
+            <i class="fas fa-heartbeat text-[#c0392b]"></i>
+            <span>Live Monitoring • Nationwide • Secure • Real-time</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- CASE MODAL -->
-    <div id="case-modal" class="modal">
-      <div class="modal-content">
-        <div class="flex justify-between items-start mb-6">
-          <div>
-            <div class="text-xs text-[var(--text3)]">CASE DETAILS</div>
-            <div id="modal-case-code" class="text-2xl font-bold"></div>
-          </div>
-          <button
-            onclick="closeModal()"
-            class="text-3xl leading-none text-[var(--text3)] hover:text-red-500"
-          >
-            &times;
-          </button>
-        </div>
-        <div id="modal-content" class="space-y-6 text-sm"></div>
-        <div class="mt-8 flex gap-3">
-          <button
-            onclick="closeModal()"
-            class="flex-1 py-4 border border-[var(--border)] rounded-2xl"
-          >
-            Close
-          </button>
-          <button
-            onclick="alert('Export functionality coming soon')"
-            class="flex-1 py-4 bg-[#c0392b] text-white rounded-2xl"
-          >
-            Export PDF
-          </button>
+      <!-- Decorative Large Faded Heartbeat Icon -->
+      <div
+        class="hidden lg:block absolute right-[-10%] bottom-[-10%] opacity-10"
+      >
+        <div class="text-[350px] text-[#c0392b]">
+          <i class="fas fa-heartbeat"></i>
         </div>
       </div>
-    </div>
+    </section>
 
-    <script src="assets/js/app.js"></script>
+    <script>
+      // Smooth Counter Animation
+      function animateValue(id, start, end, duration) {
+        const obj = document.getElementById(id);
+        if (!obj) return;
+
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+
+          // Easing function for smoother finish
+          const easedProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+
+          const value = Math.floor(easedProgress * (end - start) + start);
+          obj.textContent = value.toLocaleString();
+
+          if (progress < 1) {
+            window.requestAnimationFrame(step);
+          }
+        };
+        window.requestAnimationFrame(step);
+      }
+
+      // Trigger animation on load
+      window.onload = () => {
+        // Small delay for better impact after load
+        setTimeout(() => {
+          animateValue("stat-cases", 900, 1248, 2000);
+          animateValue("stat-art", 650, 892, 2200);
+          animateValue("stat-regions", 12, 17, 1800);
+        }, 300);
+      };
+
+      // Redirect Function
+      function goToLogin() {
+        // Relative path is better for deployment
+        window.location.href = "./screens/login.html";
+      }
+    </script>
   </body>
 </html>
