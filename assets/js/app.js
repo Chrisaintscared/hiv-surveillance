@@ -93,7 +93,7 @@ async function handleAuth() {
 // 3. LOGOUT
 async function logoutUser() {
     await supabaseClient.auth.signOut();
-    window.location.href = "/login.html";
+    window.location.href = "login.html";
 }
 
 // 4. DASHBOARD LOADER
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // IMPORTANT FIX: only redirect if NOT already on login page
         if (!isLoginPage) {
-            window.location.href = "/login.html";
+            window.location.href = "login.html";
         }
     }
 });
