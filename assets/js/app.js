@@ -43,7 +43,6 @@ async function handleAuth() {
     btn.innerText = isLogin ? "Authenticating..." : "Creating Account...";
 
     if (isLogin) {
-        // --- LOGIN LOGIC ---
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         
         if (error) {
@@ -51,31 +50,21 @@ async function handleAuth() {
             btn.disabled = false;
             btn.innerText = originalText;
         } else {
-            console.log("Auth Success. Checking SQL Profile for UUID:", data.user.id);
-            
-            // FETCH ROLE FROM YOUR UUID-SYNCED USERS TABLE
             const { data: profile, error: profileError } = await supabaseClient
                 .from('users')
                 .select('role')
                 .eq('id', data.user.id)
                 .single();
 
-            if (profileError) {
-                console.error("SQL Profile Not Found. Ensure trigger or manual sync is active.", profileError);
-                // Fallback to user dashboard if role record is missing
+            if (profileError || !profile) {
                 window.location.href = "user_dashboard.html";
             } else {
-                console.log("Verified Role:", profile.role);
-                // REDIRECTION GATE
-                if (profile.role === 'admin') {
-                    window.location.href = "admin_dashboard.html";
-                } else {
-                    window.location.href = "user_dashboard.html";
-                }
+                window.location.href = profile.role === 'admin'
+                    ? "admin_dashboard.html"
+                    : "user_dashboard.html";
             }
         }
     } else {
-        // --- REGISTRATION LOGIC ---
         const { data, error } = await supabaseClient.auth.signUp({ 
             email, 
             password,
@@ -111,7 +100,6 @@ async function loadDashboard() {
             if (document.getElementById('deceased')) document.getElementById('deceased').innerText = summary.total_deceased.toLocaleString();
         }
 
-        // Fetch Case Table Data
         const { data: cases } = await supabaseClient
             .from('hiv_cases')
             .select('*')
@@ -166,34 +154,41 @@ function runCinematicLoader() {
     }, 350);
 }
 
-// 5. SESSION INITIALIZER & AUTO-REDIRECT
+// 5. SESSION INITIALIZER — SAFE, NO REDIRECT LOOPS
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
     const path = window.location.pathname;
-    const isLoginPage = path.includes('login.html') || path.endsWith('/');
+
+    // Identify which "zone" this page belongs to
+    const isLoginPage = path.includes('login') || path === '/' || path === '';
+    const isAdminPage = path.includes('admin_dashboard');
+    const isUserPage = path.includes('user_dashboard');
+    const isDashboardPage = isAdminPage || isUserPage;
 
     if (session) {
-        // Confirm role on load/refresh to ensure security
         const { data: profile } = await supabaseClient
             .from('users')
             .select('role')
             .eq('id', session.user.id)
             .single();
-        
+
+        const role = profile?.role ?? 'user';
+
         if (isLoginPage) {
-            // Logged in user hitting the login page gets redirected home
-            if (profile?.role === 'admin') {
-                window.location.href = "admin_dashboard.html";
-            } else {
-                window.location.href = "user_dashboard.html";
-            }
-        } else {
-            // Already on a dashboard? Initialize data
+            // Logged-in user hit the login page — send them home
+            window.location.href = role === 'admin' ? "admin_dashboard.html" : "user_dashboard.html";
+
+        } else if (isDashboardPage) {
+            // ✅ Already on a dashboard — just load data, DO NOT redirect
             loadDashboard();
             runCinematicLoader();
         }
-    } else if (!isLoginPage) {
-        // No session? Forced to login
-        window.location.href = 'login.html';
+        // Any other page: do nothing, let it render normally
+
+    } else {
+        // No session — only redirect if on a protected page
+        if (isDashboardPage) {
+            window.location.href = 'login.html';
+        }
     }
 });
