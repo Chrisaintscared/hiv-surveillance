@@ -5,100 +5,329 @@
     <title>DOH Surveillance | My Repository</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap");
-      :root { --bg: #050810; --card: rgba(20, 27, 45, 0.7); --accent: #c0392b; }
-      body { background-color: var(--bg); color: #cbd5e1; font-family: "Plus Jakarta Sans", sans-serif; background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 50%); }
-      #sidebar { width: 280px; background: rgba(10, 14, 26, 0.95); backdrop-filter: blur(10px); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-      #sidebar.off { margin-left: -280px; }
-      .nav-item { display: flex; align-items: center; gap: 15px; padding: 16px 28px; color: #64748b; font-size: 14px; transition: 0.3s; border-left: 3px solid transparent; }
-      .nav-item:hover, .nav-item.active { color: #fff; background: linear-gradient(90deg, rgba(192, 57, 43, 0.1) 0%, transparent 100%); border-left: 3px solid var(--accent); }
-      .glass-card { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border-radius: 28px; }
-      .filter-input { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; color: #cbd5e1; padding: 10px 16px; font-size: 13px; font-family: "Plus Jakarta Sans", sans-serif; outline: none; transition: 0.3s; width: 100%; }
-      .filter-input:focus { border-color: #c0392b; box-shadow: 0 0 12px rgba(192, 57, 43, 0.15); }
-      .filter-input option { background: #0a0e1a; }
-      table tr { border-bottom: 1px solid rgba(255, 255, 255, 0.03); transition: 0.2s; }
-      table tr:hover { background: rgba(255, 255, 255, 0.03); }
-      table td { padding: 16px 20px; font-size: 13px; }
-      table th { padding: 14px 20px; }
-      .status-pill { padding: 3px 10px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-      .status-pill.on_art { background: rgba(45, 212, 191, 0.1); color: #2dd4bf; }
-      .status-pill.not_yet { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-      .status-pill.lost_to_followup { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
-      .status-pill.deceased { background: rgba(192, 57, 43, 0.15); color: #ef4444; }
-      .status-pill.transferred { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-      .stage-pill { padding: 3px 10px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-      .stage-pill.stage1 { background: rgba(45, 212, 191, 0.08); color: #2dd4bf; }
-      .stage-pill.stage2 { background: rgba(245, 158, 11, 0.08); color: #f59e0b; }
-      .stage-pill.stage3 { background: rgba(239, 68, 68, 0.08); color: #ef4444; }
-      .stage-pill.aids { background: rgba(192, 57, 43, 0.15); color: #ef4444; border: 1px solid rgba(192, 57, 43, 0.3); }
-      .pagination-btn { padding: 8px 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; color: #64748b; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: "Plus Jakarta Sans", sans-serif; }
-      .pagination-btn:hover:not(:disabled) { background: rgba(192, 57, 43, 0.1); border-color: #c0392b; color: #fff; }
-      .pagination-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-      .pagination-btn.active { background: rgba(192, 57, 43, 0.15); border-color: rgba(192, 57, 43, 0.4); color: #ef4444; }
-      ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
-      #case-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-      #case-modal.open { display: flex; }
-      .modal-card { background: #0a0e1a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 28px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; }
-      .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 13px; }
-      .detail-row:last-child { border-bottom: none; }
-      .detail-label { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
-      .detail-val { color: #e2e8f0; font-weight: 600; text-align: right; }
+      :root {
+        --bg: #050810;
+        --card: rgba(20, 27, 45, 0.7);
+        --accent: #c0392b;
+      }
+      body {
+        background-color: var(--bg);
+        color: #cbd5e1;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-image: radial-gradient(
+          circle at 50% 0%,
+          #1e1b4b 0%,
+          transparent 50%
+        );
+      }
+      #sidebar {
+        width: 280px;
+        background: rgba(10, 14, 26, 0.95);
+        backdrop-filter: blur(10px);
+        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #sidebar.off {
+        margin-left: -280px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 16px 28px;
+        color: #64748b;
+        font-size: 14px;
+        transition: 0.3s;
+        border-left: 3px solid transparent;
+      }
+      .nav-item:hover,
+      .nav-item.active {
+        color: #fff;
+        background: linear-gradient(
+          90deg,
+          rgba(192, 57, 43, 0.1) 0%,
+          transparent 100%
+        );
+        border-left: 3px solid var(--accent);
+      }
+      .glass-card {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        border-radius: 28px;
+      }
+      .filter-input {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        color: #cbd5e1;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        outline: none;
+        transition: 0.3s;
+        width: 100%;
+      }
+      .filter-input:focus {
+        border-color: #c0392b;
+        box-shadow: 0 0 12px rgba(192, 57, 43, 0.15);
+      }
+      .filter-input option {
+        background: #0a0e1a;
+      }
+      table tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: 0.2s;
+      }
+      table tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      table td {
+        padding: 16px 20px;
+        font-size: 13px;
+      }
+      table th {
+        padding: 14px 20px;
+      }
+      .status-pill {
+        padding: 3px 10px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .status-pill.on_art {
+        background: rgba(45, 212, 191, 0.1);
+        color: #2dd4bf;
+      }
+      .status-pill.not_yet {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+      }
+      .status-pill.lost_to_followup {
+        background: rgba(148, 163, 184, 0.1);
+        color: #94a3b8;
+      }
+      .status-pill.deceased {
+        background: rgba(192, 57, 43, 0.15);
+        color: #ef4444;
+      }
+      .status-pill.transferred {
+        background: rgba(139, 92, 246, 0.15);
+        color: #a78bfa;
+      }
+      .stage-pill {
+        padding: 3px 10px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .stage-pill.stage1 {
+        background: rgba(45, 212, 191, 0.08);
+        color: #2dd4bf;
+      }
+      .stage-pill.stage2 {
+        background: rgba(245, 158, 11, 0.08);
+        color: #f59e0b;
+      }
+      .stage-pill.stage3 {
+        background: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+      }
+      .stage-pill.aids {
+        background: rgba(192, 57, 43, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(192, 57, 43, 0.3);
+      }
+      .pagination-btn {
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+      .pagination-btn:hover:not(:disabled) {
+        background: rgba(192, 57, 43, 0.1);
+        border-color: #c0392b;
+        color: #fff;
+      }
+      .pagination-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .pagination-btn.active {
+        background: rgba(192, 57, 43, 0.15);
+        border-color: rgba(192, 57, 43, 0.4);
+        color: #ef4444;
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+      #case-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      #case-modal.open {
+        display: flex;
+      }
+      .modal-card {
+        background: #0a0e1a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 28px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 85vh;
+        overflow-y: auto;
+      }
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 13px;
+      }
+      .detail-row:last-child {
+        border-bottom: none;
+      }
+      .detail-label {
+        color: #64748b;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+      }
+      .detail-val {
+        color: #e2e8f0;
+        font-weight: 600;
+        text-align: right;
+      }
     </style>
   </head>
   <body class="flex h-screen overflow-hidden">
     <nav id="sidebar" class="flex flex-col border-r border-white/5">
       <div class="p-10 mb-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
+          <div
+            class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center"
+          >
             <i class="fas fa-shield-virus text-white"></i>
           </div>
-          <h1 class="font-black text-white leading-none tracking-tighter text-xl">
-            DOH<br /><span class="text-slate-500 text-[10px] font-normal tracking-widest uppercase">HARP System</span>
+          <h1
+            class="font-black text-white leading-none tracking-tighter text-xl"
+          >
+            DOH<br /><span
+              class="text-slate-500 text-[10px] font-normal tracking-widest uppercase"
+              >HARP System</span
+            >
           </h1>
         </div>
       </div>
       <div class="flex-1">
-        <p class="px-8 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4">Main Navigation</p>
-        <a href="user_dashboard.html" class="nav-item"><i class="fas fa-grid-2"></i> Dashboard</a>
-        <a href="user_repository.html" class="nav-item active"><i class="fas fa-folder-tree"></i> My Repository</a>
-        <a href="user_statistics.html" class="nav-item"><i class="fas fa-chart-line"></i> Statistics</a>
-        <a href="user_profile.html" class="nav-item"><i class="fas fa-user-circle"></i> My Profile</a>
+        <p
+          class="px-8 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4"
+        >
+          Main Navigation
+        </p>
+        <a href="user_dashboard.html" class="nav-item"
+          ><i class="fas fa-grid-2"></i> Dashboard</a
+        >
+        <a href="user_repository.html" class="nav-item active"
+          ><i class="fas fa-folder-tree"></i> My Repository</a
+        >
+        <a href="user_statistics.html" class="nav-item"
+          ><i class="fas fa-chart-line"></i> Statistics</a
+        >
+        <a href="user_profile.html" class="nav-item"
+          ><i class="fas fa-user-circle"></i> My Profile</a
+        >
+        <a href="user_reports.html" class="nav-item active"
+          ><i class="fas fa-file-lines"></i> Reports</a
+        >
       </div>
       <div class="p-8">
-        <button onclick="logoutUser()" class="w-full p-4 glass-card text-red-500 font-bold text-xs flex items-center justify-center gap-3 hover:bg-red-500/10 transition">
+        <button
+          onclick="logoutUser()"
+          class="w-full p-4 glass-card text-red-500 font-bold text-xs flex items-center justify-center gap-3 hover:bg-red-500/10 transition"
+        >
           <i class="fas fa-power-off"></i> SIGN OUT
         </button>
       </div>
     </nav>
 
     <main class="flex-1 flex flex-col overflow-hidden">
-      <header class="h-24 flex items-center justify-between px-12 border-b border-white/5 shrink-0">
+      <header
+        class="h-24 flex items-center justify-between px-12 border-b border-white/5 shrink-0"
+      >
         <div class="flex items-center gap-6">
-          <button onclick="toggleSB()" class="text-slate-500 hover:text-white transition">
+          <button
+            onclick="toggleSB()"
+            class="text-slate-500 hover:text-white transition"
+          >
             <i class="fas fa-bars-staggered text-xl"></i>
           </button>
           <div>
-            <h2 class="text-xl font-bold text-white tracking-tight">Case Repository</h2>
-            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">Browse & Search HIV Cases</p>
+            <h2 class="text-xl font-bold text-white tracking-tight">
+              Case Repository
+            </h2>
+            <p
+              class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5"
+            >
+              Browse & Search HIV Cases
+            </p>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <a href="user_dashboard.html" class="text-[10px] font-bold text-slate-500 hover:text-white transition uppercase tracking-widest hidden md:flex items-center gap-2">
+          <a
+            href="user_dashboard.html"
+            class="text-[10px] font-bold text-slate-500 hover:text-white transition uppercase tracking-widest hidden md:flex items-center gap-2"
+          >
             <i class="fas fa-arrow-left text-xs"></i> Dashboard
           </a>
-          <span id="record-count" class="text-[10px] font-mono text-slate-500 bg-white/5 px-3 py-1.5 rounded-lg">Loading...</span>
+          <span
+            id="record-count"
+            class="text-[10px] font-mono text-slate-500 bg-white/5 px-3 py-1.5 rounded-lg"
+            >Loading...</span
+          >
         </div>
       </header>
 
       <div class="px-12 py-5 border-b border-white/5 shrink-0">
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div class="relative md:col-span-2">
-            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-xs"></i>
-            <input type="text" id="search-input" placeholder="Search case code, province..." class="filter-input pl-10" />
+            <i
+              class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-xs"
+            ></i>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search case code, province..."
+              class="filter-input pl-10"
+            />
           </div>
           <select id="filter-year" class="filter-input">
             <option value="">All Years</option>
@@ -129,7 +358,9 @@
         <div class="glass-card overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left">
-              <thead class="text-[10px] uppercase font-black text-slate-500 bg-black/20">
+              <thead
+                class="text-[10px] uppercase font-black text-slate-500 bg-black/20"
+              >
                 <tr>
                   <th class="p-5">Case Code</th>
                   <th class="p-5">Year</th>
@@ -143,7 +374,14 @@
                 </tr>
               </thead>
               <tbody id="repo-table">
-                <tr><td colspan="9" class="p-10 text-center text-slate-600 text-sm">Loading records...</td></tr>
+                <tr>
+                  <td
+                    colspan="9"
+                    class="p-10 text-center text-slate-600 text-sm"
+                  >
+                    Loading records...
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -157,12 +395,24 @@
 
     <div id="case-modal">
       <div class="modal-card">
-        <div class="p-8 border-b border-white/5 flex items-center justify-between">
+        <div
+          class="p-8 border-b border-white/5 flex items-center justify-between"
+        >
           <div>
-            <h3 id="modal-case-code" class="text-red-500 font-black font-mono text-xl tracking-wider"></h3>
-            <p class="text-slate-500 text-[10px] uppercase tracking-widest font-bold mt-1">Case Record Detail</p>
+            <h3
+              id="modal-case-code"
+              class="text-red-500 font-black font-mono text-xl tracking-wider"
+            ></h3>
+            <p
+              class="text-slate-500 text-[10px] uppercase tracking-widest font-bold mt-1"
+            >
+              Case Record Detail
+            </p>
           </div>
-          <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition">
+          <button
+            onclick="closeModal()"
+            class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+          >
             <i class="fas fa-times text-sm"></i>
           </button>
         </div>
@@ -181,13 +431,16 @@
       async function loadRepository() {
         const { data, error } = await supabaseClient
           .from("hiv_cases")
-          .select(`id, case_code, year_reported, month_reported, age_at_diagnosis, gender, transmission_mode, sexual_mode, hiv_stage, art_status, viral_load_status, cd4_count, data_quality_flag, is_deceased, province, municipality, date_diagnosed, date_enrolled_art, region_id, facility_id, regions!hiv_cases_region_id_fkey(region_code, region_name)`)
+          .select(
+            `id, case_code, year_reported, month_reported, age_at_diagnosis, gender, transmission_mode, sexual_mode, hiv_stage, art_status, viral_load_status, cd4_count, data_quality_flag, is_deceased, province, municipality, date_diagnosed, date_enrolled_art, region_id, facility_id, regions!hiv_cases_region_id_fkey(region_code, region_name)`,
+          )
           .eq("is_active", true)
           .order("year_reported", { ascending: false })
           .order("case_code", { ascending: false });
 
         if (error) {
-          document.getElementById("repo-table").innerHTML = `<tr><td colspan="9" class="p-10 text-center text-red-500 text-sm">Failed to load cases. Check your Supabase RLS policies.</td></tr>`;
+          document.getElementById("repo-table").innerHTML =
+            `<tr><td colspan="9" class="p-10 text-center text-red-500 text-sm">Failed to load cases. Check your Supabase RLS policies.</td></tr>`;
           return;
         }
 
@@ -196,13 +449,21 @@
       }
 
       function applyFilters() {
-        const search = document.getElementById("search-input").value.toLowerCase().trim();
+        const search = document
+          .getElementById("search-input")
+          .value.toLowerCase()
+          .trim();
         const year = document.getElementById("filter-year").value;
         const art = document.getElementById("filter-art").value;
         const gender = document.getElementById("filter-gender").value;
 
         filteredCases = allCases.filter((c) => {
-          const matchSearch = !search || c.case_code?.toLowerCase().includes(search) || c.province?.toLowerCase().includes(search) || c.municipality?.toLowerCase().includes(search) || c.regions?.region_name?.toLowerCase().includes(search);
+          const matchSearch =
+            !search ||
+            c.case_code?.toLowerCase().includes(search) ||
+            c.province?.toLowerCase().includes(search) ||
+            c.municipality?.toLowerCase().includes(search) ||
+            c.regions?.region_name?.toLowerCase().includes(search);
           const matchYear = !year || String(c.year_reported) === year;
           const matchArt = !art || c.art_status === art;
           const matchGender = !gender || c.gender === gender;
@@ -210,7 +471,8 @@
         });
 
         currentPage = 1;
-        document.getElementById("record-count").textContent = `${filteredCases.length.toLocaleString()} records`;
+        document.getElementById("record-count").textContent =
+          `${filteredCases.length.toLocaleString()} records`;
         renderTable();
         renderPagination();
       }
@@ -226,10 +488,24 @@
           return;
         }
 
-        const qualityColors = { verified: "text-teal-400", complete: "text-teal-600", pending_verification: "text-yellow-500", flagged: "text-red-400", incomplete: "text-slate-500" };
-        const qualityIcons = { verified: "fa-circle-check", complete: "fa-circle-check", pending_verification: "fa-clock", flagged: "fa-triangle-exclamation", incomplete: "fa-circle-minus" };
+        const qualityColors = {
+          verified: "text-teal-400",
+          complete: "text-teal-600",
+          pending_verification: "text-yellow-500",
+          flagged: "text-red-400",
+          incomplete: "text-slate-500",
+        };
+        const qualityIcons = {
+          verified: "fa-circle-check",
+          complete: "fa-circle-check",
+          pending_verification: "fa-clock",
+          flagged: "fa-triangle-exclamation",
+          incomplete: "fa-circle-minus",
+        };
 
-        tbody.innerHTML = pageData.map((c) => `
+        tbody.innerHTML = pageData
+          .map(
+            (c) => `
           <tr class="cursor-pointer" onclick="openModal(${c.id})">
             <td class="p-5 font-mono text-red-500 font-bold text-[13px]">${c.case_code}</td>
             <td class="p-5 text-slate-400 font-mono text-xs">${c.year_reported}</td>
@@ -241,23 +517,30 @@
             <td class="p-5"><i class="fas ${qualityIcons[c.data_quality_flag] ?? "fa-circle-minus"} ${qualityColors[c.data_quality_flag] ?? "text-slate-500"} text-sm" title="${c.data_quality_flag}"></i></td>
             <td class="p-5"><i class="fas fa-chevron-right text-slate-700 text-xs"></i></td>
           </tr>
-        `).join("");
+        `,
+          )
+          .join("");
 
         const total = filteredCases.length;
         const end = Math.min(start + PAGE_SIZE, total);
-        document.getElementById("page-info").textContent = `Showing ${start + 1}–${end} of ${total} records`;
+        document.getElementById("page-info").textContent =
+          `Showing ${start + 1}–${end} of ${total} records`;
       }
 
       function renderPagination() {
         const totalPages = Math.ceil(filteredCases.length / PAGE_SIZE);
         const ctrl = document.getElementById("pagination-controls");
-        if (totalPages <= 1) { ctrl.innerHTML = ""; return; }
+        if (totalPages <= 1) {
+          ctrl.innerHTML = "";
+          return;
+        }
 
         let pages = "";
         for (let i = 1; i <= Math.min(totalPages, 7); i++) {
           pages += `<button class="pagination-btn ${i === currentPage ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
         }
-        if (totalPages > 7) pages += `<span class="text-slate-600 text-xs">...</span><button class="pagination-btn ${totalPages === currentPage ? "active" : ""}" onclick="goPage(${totalPages})">${totalPages}</button>`;
+        if (totalPages > 7)
+          pages += `<span class="text-slate-600 text-xs">...</span><button class="pagination-btn ${totalPages === currentPage ? "active" : ""}" onclick="goPage(${totalPages})">${totalPages}</button>`;
 
         ctrl.innerHTML = `
           <button class="pagination-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}><i class="fas fa-chevron-left text-xs"></i></button>
@@ -281,28 +564,55 @@
         const rows = [
           ["Year Reported", c.year_reported],
           ["Date Diagnosed", c.date_diagnosed ?? "N/A"],
-          ["Age at Diagnosis", c.age_at_diagnosis != null ? `${c.age_at_diagnosis} years old` : "N/A"],
+          [
+            "Age at Diagnosis",
+            c.age_at_diagnosis != null
+              ? `${c.age_at_diagnosis} years old`
+              : "N/A",
+          ],
           ["Gender", capitalize(c.gender ?? "N/A")],
-          ["Transmission Mode", capitalize((c.transmission_mode ?? "N/A").replace("_", " "))],
-          ["Sexual Mode", capitalize((c.sexual_mode ?? "N/A").replace("_", " "))],
+          [
+            "Transmission Mode",
+            capitalize((c.transmission_mode ?? "N/A").replace("_", " ")),
+          ],
+          [
+            "Sexual Mode",
+            capitalize((c.sexual_mode ?? "N/A").replace("_", " ")),
+          ],
           ["HIV Stage", (c.hiv_stage ?? "N/A").replace("stage", "Stage ")],
-          ["ART Status", capitalize((c.art_status ?? "N/A").replace(/_/g, " "))],
+          [
+            "ART Status",
+            capitalize((c.art_status ?? "N/A").replace(/_/g, " ")),
+          ],
           ["Date Enrolled ART", c.date_enrolled_art ?? "N/A"],
-          ["CD4 Count", c.cd4_count != null ? `${c.cd4_count} cells/µL` : "N/A"],
-          ["Viral Load", capitalize((c.viral_load_status ?? "N/A").replace("_", " "))],
+          [
+            "CD4 Count",
+            c.cd4_count != null ? `${c.cd4_count} cells/µL` : "N/A",
+          ],
+          [
+            "Viral Load",
+            capitalize((c.viral_load_status ?? "N/A").replace("_", " ")),
+          ],
           ["Region", c.regions?.region_name ?? "N/A"],
           ["Province", c.province ?? "N/A"],
           ["Municipality", c.municipality ?? "N/A"],
           ["Deceased", c.is_deceased ? "Yes" : "No"],
-          ["Data Quality", capitalize((c.data_quality_flag ?? "N/A").replace("_", " "))],
+          [
+            "Data Quality",
+            capitalize((c.data_quality_flag ?? "N/A").replace("_", " ")),
+          ],
         ];
 
-        document.getElementById("modal-body").innerHTML = rows.map(([label, val]) => `
+        document.getElementById("modal-body").innerHTML = rows
+          .map(
+            ([label, val]) => `
           <div class="detail-row">
             <span class="detail-label">${label}</span>
             <span class="detail-val">${val}</span>
           </div>
-        `).join("");
+        `,
+          )
+          .join("");
 
         document.getElementById("case-modal").classList.add("open");
       }
@@ -315,14 +625,18 @@
         return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
       }
 
-      ["search-input", "filter-year", "filter-art", "filter-gender"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener("input", applyFilters);
-      });
+      ["search-input", "filter-year", "filter-art", "filter-gender"].forEach(
+        (id) => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("input", applyFilters);
+        },
+      );
 
-      document.getElementById("case-modal").addEventListener("click", function (e) {
-        if (e.target === this) closeModal();
-      });
+      document
+        .getElementById("case-modal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeModal();
+        });
 
       window.loadDashboard = async function () {
         await loadRepository();

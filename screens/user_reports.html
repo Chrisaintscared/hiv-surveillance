@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DOH Surveillance | Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap");
+      :root {
+        --bg: #050810;
+        --card: rgba(20, 27, 45, 0.7);
+        --accent: #c0392b;
+      }
+      body {
+        background-color: var(--bg);
+        color: #cbd5e1;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-image: radial-gradient(
+          circle at 50% 0%,
+          #1e1b4b 0%,
+          transparent 50%
+        );
+      }
+      #sidebar {
+        width: 280px;
+        background: rgba(10, 14, 26, 0.95);
+        backdrop-filter: blur(10px);
+        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #sidebar.off {
+        margin-left: -280px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 16px 28px;
+        color: #64748b;
+        font-size: 14px;
+        transition: 0.3s;
+        border-left: 3px solid transparent;
+      }
+      .nav-item:hover,
+      .nav-item.active {
+        color: #fff;
+        background: linear-gradient(
+          90deg,
+          rgba(192, 57, 43, 0.1) 0%,
+          transparent 100%
+        );
+        border-left: 3px solid var(--accent);
+      }
+      .glass-card {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        border-radius: 28px;
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+
+      .report-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 20px;
+        padding: 28px;
+        cursor: pointer;
+        transition: 0.25s;
+      }
+      .report-card:hover {
+        border-color: rgba(192, 57, 43, 0.3);
+        background: rgba(192, 57, 43, 0.04);
+        transform: translateY(-2px);
+      }
+      .report-card.selected {
+        border-color: rgba(192, 57, 43, 0.5);
+        background: rgba(192, 57, 43, 0.07);
+      }
+
+      .filter-input {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        color: #cbd5e1;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        outline: none;
+        transition: 0.3s;
+        width: 100%;
+      }
+      .filter-input:focus {
+        border-color: #c0392b;
+        box-shadow: 0 0 10px rgba(192, 57, 43, 0.12);
+      }
+      .filter-input option {
+        background: #0a0e1a;
+      }
+
+      .btn-generate {
+        background: linear-gradient(135deg, #c0392b, #e74c3c);
+        color: white;
+        padding: 14px 32px;
+        border-radius: 14px;
+        font-size: 13px;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        transition: 0.3s;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .btn-generate:hover {
+        opacity: 0.88;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(192, 57, 43, 0.3);
+      }
+      .btn-generate:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .btn-download {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .btn-download:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #e2e8f0;
+      }
+
+      #preview-panel {
+        display: none;
+      }
+      #preview-panel.show {
+        display: block;
+      }
+
+      .rpt-header {
+        border-bottom: 2px solid rgba(192, 57, 43, 0.3);
+        padding-bottom: 20px;
+        margin-bottom: 24px;
+      }
+      .rpt-section {
+        margin-bottom: 28px;
+      }
+      .rpt-section-title {
+        font-size: 10px;
+        font-weight: 800;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .rpt-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .rpt-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .rpt-stat {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 16px 18px;
+      }
+      .rpt-stat-label {
+        font-size: 10px;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .rpt-stat-val {
+        font-size: 22px;
+        font-weight: 900;
+        color: #e2e8f0;
+      }
+      .rpt-stat-sub {
+        font-size: 11px;
+        color: #334155;
+        margin-top: 2px;
+      }
+      .rpt-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 13px;
+      }
+      .rpt-row:last-child {
+        border-bottom: none;
+      }
+      .rpt-key {
+        color: #64748b;
+        text-transform: capitalize;
+      }
+      .rpt-val {
+        font-weight: 700;
+        color: #e2e8f0;
+      }
+      .rpt-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      }
+      .rpt-bar-wrap:last-child {
+        border-bottom: none;
+      }
+      .rpt-bar-label {
+        font-size: 11px;
+        color: #94a3b8;
+        width: 160px;
+        flex-shrink: 0;
+        text-transform: capitalize;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .rpt-bar-track {
+        flex: 1;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .rpt-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #c0392b, #e74c3c);
+      }
+      .rpt-bar-num {
+        font-size: 11px;
+        color: #64748b;
+        width: 40px;
+        text-align: right;
+        font-weight: 700;
+      }
+
+      .pill {
+        padding: 2px 10px;
+        border-radius: 99px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .pill-teal {
+        background: rgba(45, 212, 191, 0.1);
+        color: #2dd4bf;
+      }
+      .pill-amber {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+      }
+      .pill-red {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+      }
+      .pill-slate {
+        background: rgba(100, 116, 139, 0.1);
+        color: #94a3b8;
+      }
+      .pill-purple {
+        background: rgba(167, 139, 250, 0.1);
+        color: #a78bfa;
+      }
+
+      .generating-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(5, 8, 16, 0.8);
+        backdrop-filter: blur(4px);
+        border-radius: 28px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+        z-index: 10;
+      }
+      .generating-overlay.show {
+        display: flex;
+      }
+
+      @media print {
+        #sidebar,
+        header,
+        .controls-section {
+          display: none !important;
+        }
+        body {
+          background: white !important;
+          color: black !important;
+        }
+        #report-output {
+          color: black;
+        }
+      }
+    </style>
+  </head>
+  <body class="flex h-screen overflow-hidden">
+    <nav id="sidebar" class="flex flex-col border-r border-white/5">
+      <div class="p-10 mb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center"
+          >
+            <i class="fas fa-shield-virus text-white"></i>
+          </div>
+          <h1
+            class="font-black text-white leading-none tracking-tighter text-xl"
+          >
+            DOH<br /><span
+              class="text-slate-500 text-[10px] font-normal tracking-widest uppercase"
+              >HARP System</span
+            >
+          </h1>
+        </div>
+      </div>
+      <div class="flex-1">
+        <p
+          class="px-8 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4"
+        >
+          Main Navigation
+        </p>
+        <a href="user_dashboard.html" class="nav-item"
+          ><i class="fas fa-grid-2"></i> Dashboard</a
+        >
+        <a href="user_repository.html" class="nav-item"
+          ><i class="fas fa-folder-tree"></i> My Repository</a
+        >
+        <a href="user_statistics.html" class="nav-item"
+          ><i class="fas fa-chart-line"></i> Statistics</a
+        >
+
+        <a href="user_profile.html" class="nav-item"
+          ><i class="fas fa-user-circle"></i> My Profile</a
+        >
+        <a href="user_reports.html" class="nav-item active"
+          ><i class="fas fa-file-lines"></i> Reports</a
+        >
+      </div>
+      <div class="p-8">
+        <button
+          onclick="logoutUser()"
+          class="w-full p-4 glass-card text-red-500 font-bold text-xs flex items-center justify-center gap-3 hover:bg-red-500/10 transition"
+        >
+          <i class="fas fa-power-off"></i> SIGN OUT
+        </button>
+      </div>
+    </nav>
+
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <header
+        class="h-24 flex items-center justify-between px-12 border-b border-white/5 shrink-0"
+      >
+        <div class="flex items-center gap-6">
+          <button
+            onclick="toggleSB()"
+            class="text-slate-500 hover:text-white transition"
+          >
+            <i class="fas fa-bars-staggered text-xl"></i>
+          </button>
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">
+              Report Generator
+            </h2>
+            <p
+              class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5"
+            >
+              HIV/AIDS Surveillance Summary Reports
+            </p>
+          </div>
+        </div>
+        <div id="dl-btns" class="hidden items-center gap-3">
+          <button onclick="printReport()" class="btn-download">
+            <i class="fas fa-print"></i> Print
+          </button>
+          <button onclick="downloadTxt()" class="btn-download">
+            <i class="fas fa-file-lines"></i> Export TXT
+          </button>
+        </div>
+      </header>
+
+      <div class="flex-1 overflow-y-auto px-12 py-8 space-y-6">
+        <div class="controls-section glass-card p-8">
+          <p
+            class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-5"
+          >
+            Report Configuration
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div>
+              <p
+                class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-2"
+              >
+                Report Type
+              </p>
+              <select
+                id="cfg-type"
+                class="filter-input"
+                onchange="onTypeChange()"
+              >
+                <option value="summary">National Summary</option>
+                <option value="annual">Annual Breakdown</option>
+                <option value="regional">Regional Breakdown</option>
+                <option value="art">ART & Treatment Report</option>
+                <option value="demographic">Demographic Report</option>
+              </select>
+            </div>
+            <div>
+              <p
+                class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-2"
+              >
+                Year Filter
+              </p>
+              <select id="cfg-year" class="filter-input">
+                <option value="">All Years</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+              </select>
+            </div>
+            <div>
+              <p
+                class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-2"
+              >
+                Island Group
+              </p>
+              <select id="cfg-island" class="filter-input">
+                <option value="">All Islands</option>
+                <option value="Luzon">Luzon</option>
+                <option value="Visayas">Visayas</option>
+                <option value="Mindanao">Mindanao</option>
+              </select>
+            </div>
+            <div>
+              <p
+                class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-2"
+              >
+                Gender
+              </p>
+              <select id="cfg-gender" class="filter-input">
+                <option value="">All Genders</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="transgender">Transgender</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <p
+              id="filter-summary"
+              class="text-[11px] text-slate-600 font-mono"
+            ></p>
+            <button
+              onclick="generateReport()"
+              class="btn-generate"
+              id="gen-btn"
+            >
+              <i class="fas fa-wand-magic-sparkles"></i> Generate Report
+            </button>
+          </div>
+        </div>
+
+        <div id="preview-panel" class="relative">
+          <div class="generating-overlay" id="gen-overlay">
+            <div
+              class="w-12 h-12 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"
+            ></div>
+            <p
+              class="text-[11px] text-slate-400 uppercase tracking-widest font-bold"
+            >
+              Compiling data...
+            </p>
+          </div>
+          <div class="glass-card p-10" id="report-output"></div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const SUPABASE_URL = "https://vqwlrrhrgpiiualbetsf.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_dHKEoT8RgBRTwTYuQCJsbA_VzFJ0Jae";
+      const supabaseClient = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+      );
+
+      function toggleSB() {
+        document.getElementById("sidebar").classList.toggle("off");
+      }
+      async function logoutUser() {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      }
+      function fmt(n) {
+        return n != null ? Number(n).toLocaleString() : "0";
+      }
+      function pct(a, b) {
+        return b ? Math.round((a / b) * 100) + "%" : "0%";
+      }
+      function cap(s) {
+        return s
+          ? s.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+          : "—";
+      }
+      function now() {
+        return new Date().toLocaleDateString("en-PH", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      }
+
+      function countBy(arr, key) {
+        return arr.reduce((acc, item) => {
+          const v = item[key] || "unknown";
+          acc[v] = (acc[v] || 0) + 1;
+          return acc;
+        }, {});
+      }
+
+      function topEntries(obj, n = 10) {
+        return Object.entries(obj)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, n);
+      }
+
+      function barRows(entries, total) {
+        const max = entries[0]?.[1] || 1;
+        return entries
+          .map(
+            ([k, v]) => `
+          <div class="rpt-bar-wrap">
+            <span class="rpt-bar-label">${cap(k)}</span>
+            <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:${Math.round((v / max) * 100)}%"></div></div>
+            <span class="rpt-bar-num">${fmt(v)}</span>
+            <span style="font-size:10px;color:#334155;width:34px;text-align:right">${pct(v, total)}</span>
+          </div>`,
+          )
+          .join("");
+      }
+
+      function statCard(label, val, sub, color = "#e2e8f0") {
+        return `<div class="rpt-stat">
+          <div class="rpt-stat-label">${label}</div>
+          <div class="rpt-stat-val" style="color:${color}">${val}</div>
+          ${sub ? `<div class="rpt-stat-sub">${sub}</div>` : ""}
+        </div>`;
+      }
+
+      function splitRows(obj, total) {
+        return Object.entries(obj)
+          .sort((a, b) => b[1] - a[1])
+          .map(
+            ([k, v]) =>
+              `<div class="rpt-row"><span class="rpt-key">${cap(k)}</span><span class="rpt-val">${fmt(v)} <span style="color:#334155;font-weight:400;font-size:11px">${pct(v, total)}</span></span></div>`,
+          )
+          .join("");
+      }
+
+      function onTypeChange() {
+        const t = document.getElementById("cfg-type").value;
+        document.getElementById("cfg-island").disabled =
+          t === "art" || t === "demographic";
+      }
+
+      function getFilterDesc() {
+        const year = document.getElementById("cfg-year").value;
+        const island = document.getElementById("cfg-island").value;
+        const gender = document.getElementById("cfg-gender").value;
+        const parts = [];
+        if (year) parts.push("Year: " + year);
+        if (island) parts.push("Island: " + island);
+        if (gender) parts.push("Gender: " + cap(gender));
+        document.getElementById("filter-summary").textContent = parts.length
+          ? "Filters: " + parts.join(" · ")
+          : "No filters applied — showing all records";
+      }
+
+      ["cfg-type", "cfg-year", "cfg-island", "cfg-gender"].forEach((id) => {
+        document.getElementById(id).addEventListener("change", getFilterDesc);
+      });
+      getFilterDesc();
+
+      async function fetchData() {
+        const year = document.getElementById("cfg-year").value;
+        const island = document.getElementById("cfg-island").value;
+        const gender = document.getElementById("cfg-gender").value;
+
+        let q = supabaseClient
+          .from("hiv_cases")
+          .select(
+            "year_reported, month_reported, age_at_diagnosis, age_group, gender, transmission_mode, sexual_mode, hiv_stage, art_status, viral_load_status, cd4_count, is_deceased, province, municipality, region_id, regions(region_name, island_group, region_code)",
+          )
+          .eq("is_active", true);
+
+        if (year) q = q.eq("year_reported", parseInt(year));
+        if (gender) q = q.eq("gender", gender);
+
+        const { data, error } = await q;
+        if (error || !data) return [];
+
+        if (island)
+          return data.filter((c) => c.regions?.island_group === island);
+        return data;
+      }
+
+      async function generateReport() {
+        const btn = document.getElementById("gen-btn");
+        const panel = document.getElementById("preview-panel");
+        const overlay = document.getElementById("gen-overlay");
+        const output = document.getElementById("report-output");
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        panel.classList.add("show");
+        overlay.classList.add("show");
+
+        const data = await fetchData();
+        const type = document.getElementById("cfg-type").value;
+        const year = document.getElementById("cfg-year").value;
+        const island = document.getElementById("cfg-island").value;
+        const gender = document.getElementById("cfg-gender").value;
+
+        const filterDesc = [
+          year ? "Year " + year : "All Years",
+          island || "All Islands",
+          gender ? cap(gender) : "All Genders",
+        ].join(" · ");
+
+        const typeLabels = {
+          summary: "National Summary",
+          annual: "Annual Breakdown",
+          regional: "Regional Breakdown",
+          art: "ART & Treatment Report",
+          demographic: "Demographic Report",
+        };
+
+        let html = `
+          <div class="rpt-header">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+              <div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                  <div style="width:32px;height:32px;background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                    <i class="fas fa-shield-virus" style="color:white;font-size:14px"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;color:#475569;font-weight:800;text-transform:uppercase;letter-spacing:0.1em">Department of Health — Philippines</div>
+                    <div style="font-size:10px;color:#334155;font-weight:600">HIV/AIDS & ART Registry of the Philippines (HARP)</div>
+                  </div>
+                </div>
+                <h2 style="font-size:22px;font-weight:900;color:#f1f5f9;margin-bottom:4px">${typeLabels[type]}</h2>
+                <p style="font-size:12px;color:#64748b">Scope: ${filterDesc}</p>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:10px;color:#334155;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Generated</div>
+                <div style="font-size:13px;color:#94a3b8;font-weight:600;margin-top:2px">${now()}</div>
+                <div style="margin-top:8px;font-size:10px;color:#1e293b;background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.2);border-radius:6px;padding:3px 10px;color:#ef4444;font-weight:800">HARP · CONFIDENTIAL</div>
+              </div>
+            </div>
+          </div>`;
+
+        if (!data.length) {
+          html += `<div style="text-align:center;padding:48px;color:#475569"><i class="fas fa-database" style="font-size:32px;margin-bottom:16px;display:block;opacity:0.3"></i>No records match the selected filters.</div>`;
+          output.innerHTML = html;
+          overlay.classList.remove("show");
+          btn.disabled = false;
+          btn.innerHTML =
+            '<i class="fas fa-wand-magic-sparkles"></i> Generate Report';
+          document.getElementById("dl-btns").classList.remove("hidden");
+          document.getElementById("dl-btns").classList.add("flex");
+          return;
+        }
+
+        const total = data.length;
+        const onArt = data.filter((c) => c.art_status === "on_art").length;
+        const deceased = data.filter((c) => c.is_deceased).length;
+        const notYet = data.filter((c) => c.art_status === "not_yet").length;
+        const ltfu = data.filter(
+          (c) => c.art_status === "lost_to_followup",
+        ).length;
+        const undetectable = data.filter(
+          (c) => c.viral_load_status === "undetectable",
+        ).length;
+        const aids = data.filter((c) => c.hiv_stage === "aids").length;
+        const avgAge =
+          data
+            .filter((c) => c.age_at_diagnosis)
+            .reduce((s, c) => s + c.age_at_diagnosis, 0) /
+          (data.filter((c) => c.age_at_diagnosis).length || 1);
+
+        html += `
+          <div class="rpt-section">
+            <div class="rpt-section-title">Key Indicators</div>
+            <div class="rpt-grid-4">
+              ${statCard("Total Cases", fmt(total), "Active in registry")}
+              ${statCard("On ART", fmt(onArt), pct(onArt, total) + " coverage", "#2dd4bf")}
+              ${statCard("Undetectable VL", fmt(undetectable), pct(undetectable, total) + " of cases", "#818cf8")}
+              ${statCard("Deceased", fmt(deceased), pct(deceased, total) + " mortality", "#ef4444")}
+            </div>
+          </div>`;
+
+        if (type === "summary" || type === "art") {
+          const artCounts = countBy(data, "art_status");
+          const vlCounts = countBy(data, "viral_load_status");
+          html += `
+            <div class="rpt-section">
+              <div class="rpt-section-title">ART Treatment Status</div>
+              <div class="rpt-grid">
+                <div>
+                  <div style="margin-bottom:14px">
+                    ${barRows(topEntries(artCounts), total)}
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)">Viral Load Status</div>
+                  ${barRows(topEntries(vlCounts), total)}
+                  <div style="margin-top:16px;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(255,255,255,0.04)">
+                    <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px">Treatment Gap Analysis</div>
+                    <div class="rpt-row"><span class="rpt-key">Lost to Follow-up</span><span class="rpt-val" style="color:#f59e0b">${fmt(ltfu)} <span style="color:#334155;font-weight:400;font-size:11px">${pct(ltfu, total)}</span></span></div>
+                    <div class="rpt-row"><span class="rpt-key">Not Yet on ART</span><span class="rpt-val" style="color:#ef4444">${fmt(notYet)} <span style="color:#334155;font-weight:400;font-size:11px">${pct(notYet, total)}</span></span></div>
+                    <div class="rpt-row"><span class="rpt-key">AIDS Stage Cases</span><span class="rpt-val" style="color:#c0392b">${fmt(aids)} <span style="color:#334155;font-weight:400;font-size:11px">${pct(aids, total)}</span></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        }
+
+        if (type === "summary" || type === "demographic") {
+          const genderCounts = countBy(data, "gender");
+          const ageCounts = countBy(data, "age_group");
+          const transCounts = countBy(data, "transmission_mode");
+          const stageCounts = countBy(data, "hiv_stage");
+          const ageOrder = ["under15", "15to24", "25to34", "35to44", "45plus"];
+          const ageOrdered = Object.fromEntries(
+            ageOrder.filter((k) => ageCounts[k]).map((k) => [k, ageCounts[k]]),
+          );
+          html += `
+            <div class="rpt-section">
+              <div class="rpt-section-title">Demographic Profile</div>
+              <div class="rpt-grid">
+                <div>
+                  <div style="font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)">Gender Distribution</div>
+                  ${splitRows(genderCounts, total)}
+                  <div style="margin-top:16px;font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)">Age Group</div>
+                  ${barRows(Object.entries(ageOrdered), total)}
+                  <div style="margin-top:8px;font-size:11px;color:#475569">Avg. age at diagnosis: <span style="color:#e2e8f0;font-weight:700">${Math.round(avgAge)} yrs</span></div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)">Transmission Mode</div>
+                  ${barRows(topEntries(transCounts), total)}
+                  <div style="margin-top:16px;font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)">HIV Stage</div>
+                  ${splitRows(stageCounts, total)}
+                </div>
+              </div>
+            </div>`;
+        }
+
+        if (type === "summary" || type === "regional") {
+          const regionCounts = {};
+          data.forEach((c) => {
+            const name = c.regions?.region_name || "Unknown";
+            regionCounts[name] = (regionCounts[name] || 0) + 1;
+          });
+          const islandCounts = {};
+          data.forEach((c) => {
+            const ig = c.regions?.island_group || "Unknown";
+            islandCounts[ig] = (islandCounts[ig] || 0) + 1;
+          });
+          const top = topEntries(regionCounts, 17);
+          html += `
+            <div class="rpt-section">
+              <div class="rpt-section-title">Regional Distribution</div>
+              <div class="rpt-grid">
+                <div>
+                  <div style="font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)">By Island Group</div>
+                  ${splitRows(islandCounts, total)}
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)">By Region (Top)</div>
+                  ${barRows(top, total)}
+                </div>
+              </div>
+            </div>`;
+        }
+
+        if (type === "annual") {
+          const yearCounts = countBy(data, "year_reported");
+          const artByYear = {};
+          data.forEach((c) => {
+            const y = c.year_reported;
+            if (!artByYear[y])
+              artByYear[y] = { total: 0, onArt: 0, deceased: 0 };
+            artByYear[y].total++;
+            if (c.art_status === "on_art") artByYear[y].onArt++;
+            if (c.is_deceased) artByYear[y].deceased++;
+          });
+          const years = Object.keys(artByYear).sort((a, b) => b - a);
+          html += `
+            <div class="rpt-section">
+              <div class="rpt-section-title">Annual Trend</div>
+              <div style="overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                  <thead>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+                      <th style="padding:10px 16px;text-align:left;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.1em;font-weight:800">Year</th>
+                      <th style="padding:10px 16px;text-align:right;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.1em;font-weight:800">Total Cases</th>
+                      <th style="padding:10px 16px;text-align:right;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.1em;font-weight:800">On ART</th>
+                      <th style="padding:10px 16px;text-align:right;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.1em;font-weight:800">ART Coverage</th>
+                      <th style="padding:10px 16px;text-align:right;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.1em;font-weight:800">Deceased</th>
+                      <th style="padding:10px 16px;text-align:right;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.1em;font-weight:800">Mortality Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${years
+                      .map((y) => {
+                        const r = artByYear[y];
+                        const artPct = Math.round((r.onArt / r.total) * 100);
+                        const mortPct = Math.round(
+                          (r.deceased / r.total) * 100,
+                        );
+                        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03);transition:0.2s" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background=''">
+                        <td style="padding:12px 16px;font-weight:800;color:#e2e8f0">${y}</td>
+                        <td style="padding:12px 16px;text-align:right;color:#94a3b8">${fmt(r.total)}</td>
+                        <td style="padding:12px 16px;text-align:right;color:#2dd4bf">${fmt(r.onArt)}</td>
+                        <td style="padding:12px 16px;text-align:right"><span class="pill ${artPct >= 70 ? "pill-teal" : artPct >= 40 ? "pill-amber" : "pill-red"}">${artPct}%</span></td>
+                        <td style="padding:12px 16px;text-align:right;color:#ef4444">${fmt(r.deceased)}</td>
+                        <td style="padding:12px 16px;text-align:right"><span class="pill ${mortPct <= 5 ? "pill-teal" : mortPct <= 15 ? "pill-amber" : "pill-red"}">${mortPct}%</span></td>
+                      </tr>`;
+                      })
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>`;
+        }
+
+        html += `
+          <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <p style="font-size:10px;color:#1e293b;font-weight:700">This report is generated from the HARP surveillance system and is intended for authorized health personnel only.</p>
+            <p style="font-size:10px;color:#1e293b;font-mono">Generated: ${now()} · Total Records Analyzed: ${fmt(total)}</p>
+          </div>`;
+
+        output.innerHTML = html;
+        overlay.classList.remove("show");
+        btn.disabled = false;
+        btn.innerHTML =
+          '<i class="fas fa-wand-magic-sparkles"></i> Generate Report';
+        document.getElementById("dl-btns").classList.remove("hidden");
+        document.getElementById("dl-btns").classList.add("flex");
+      }
+
+      function printReport() {
+        window.print();
+      }
+
+      function downloadTxt() {
+        const output = document.getElementById("report-output");
+        const lines = [];
+        output
+          .querySelectorAll(
+            "h2, .rpt-section-title, .rpt-stat, .rpt-row, .rpt-bar-wrap",
+          )
+          .forEach((el) => {
+            const text = el.innerText.trim().replace(/\n+/g, " | ");
+            if (text) lines.push(text);
+          });
+        const blob = new Blob(
+          ["DOH HARP — Report Export\n" + now() + "\n\n" + lines.join("\n")],
+          { type: "text/plain" },
+        );
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download =
+          "HARP_Report_" + new Date().toISOString().slice(0, 10) + ".txt";
+        a.click();
+      }
+
+      if (window.innerWidth < 680)
+        document.getElementById("sidebar").classList.add("off");
+    </script>
+  </body>
+</html>

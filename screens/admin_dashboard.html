@@ -5,120 +5,2644 @@
     <title>DOH HARP | Admin Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;800&display=swap");
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
       :root {
-        --bg: #050810;
-        --card: rgba(20, 27, 45, 0.7);
-        --accent: #c0392b;
+        --bg: #0a0e1a;
+        --surface: #111827;
+        --surface2: #1e2433;
+        --border: rgba(255, 255, 255, 0.07);
+        --text: #f1f5f9;
+        --text2: #94a3b8;
+        --text3: #475569;
+        --red: #c0392b;
+        --red-m: #e74c3c;
+        --red-l: rgba(192, 57, 43, 0.12);
+        --teal: #0e9f6e;
+        --teal-l: rgba(14, 159, 110, 0.12);
+        --blue: #1a56db;
+        --blue-l: rgba(26, 86, 219, 0.12);
+        --amber: #b45309;
+        --amber-l: rgba(180, 83, 9, 0.12);
+        --purple: #6c47ff;
+        --purple-l: rgba(108, 71, 255, 0.12);
+        --sidebar-w: 240px;
+        --r: 14px;
+        --rs: 8px;
+        --tr: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
       body {
-        background-color: var(--bg);
-        color: #cbd5e1;
-        font-family: "Plus Jakarta Sans", sans-serif;
+        font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        overflow-x: hidden;
         background-image: radial-gradient(
           circle at 50% 0%,
           #1e1b4b 0%,
-          transparent 50%
+          transparent 55%
         );
       }
-      .glass-card {
-        background: var(--card);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(12px);
-        border-radius: 28px;
+
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #0a0e1a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition:
+          opacity 0.6s ease,
+          visibility 0.6s ease;
       }
-      #sidebar {
-        width: 280px;
-        background: rgba(10, 14, 26, 0.95);
-        backdrop-filter: blur(10px);
-        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      #loading-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
       }
-      .nav-item {
+      .ls-ribbon {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #c0392b, #e74c3c, #c0392b);
+        background-size: 200% 100%;
+        animation: ribbonSlide 1.8s linear infinite;
+      }
+      @keyframes ribbonSlide {
+        0% {
+          background-position: 0% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+      .ls-logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #c0392b, #e74c3c);
         display: flex;
         align-items: center;
-        gap: 15px;
-        padding: 16px 28px;
-        color: #64748b;
-        font-size: 14px;
-        transition: 0.3s;
+        justify-content: center;
+        box-shadow: 0 0 40px rgba(192, 57, 43, 0.45);
+        animation: logoPulse 2s ease-in-out infinite;
+        margin-bottom: 28px;
+      }
+      .ls-logo i {
+        font-size: 30px;
+        color: #fff;
+      }
+      @keyframes logoPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 30px rgba(192, 57, 43, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 55px rgba(192, 57, 43, 0.75);
+        }
+      }
+      .ls-title {
+        font-size: 22px;
+        font-weight: 600;
+        color: #f1f5f9;
+        text-align: center;
+        margin-bottom: 6px;
+      }
+      .ls-sub {
+        font-size: 13px;
+        color: #475569;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 40px;
+        text-align: center;
+      }
+      .ls-bar-wrap {
+        width: 240px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.07);
+        border-radius: 99px;
+        overflow: hidden;
+        margin-bottom: 32px;
+      }
+      .ls-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #c0392b, #e74c3c);
+        border-radius: 99px;
+        transition: width 0.3s ease;
+      }
+      .ls-status {
+        font-size: 12px;
+        color: #475569;
+        letter-spacing: 0.03em;
+        height: 18px;
+        text-align: center;
+        margin-bottom: 44px;
+      }
+      .ls-credits {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        padding-top: 24px;
+        width: 280px;
+      }
+      .ls-credits-label {
+        font-size: 10px;
+        color: #334155;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 4px;
+      }
+      .ls-names {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .ls-chip {
+        padding: 5px 13px;
+        border-radius: 99px;
+        background: rgba(192, 57, 43, 0.12);
+        border: 1px solid rgba(192, 57, 43, 0.22);
+        color: #e74c3c;
+        font-size: 11px;
+        font-weight: 500;
+        animation: chipFade 0.4s ease both;
+      }
+      .ls-chip:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .ls-chip:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .ls-chip:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .ls-chip:nth-child(4) {
+        animation-delay: 0.4s;
+      }
+      @keyframes chipFade {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      #app-root {
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+      }
+      #app-root.visible {
+        opacity: 1;
+      }
+
+      .sidebar {
+        width: var(--sidebar-w);
+        background: rgba(10, 14, 26, 0.97);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        transition: var(--tr);
+        z-index: 200;
+        overflow: hidden;
+      }
+      .sidebar.off {
+        width: 0;
+      }
+      .sb-brand {
+        padding: 20px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: var(--sidebar-w);
+      }
+      .sb-logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #c0392b, #e74c3c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 0 18px rgba(192, 57, 43, 0.35);
+      }
+      .sb-logo i {
+        font-size: 16px;
+        color: #fff;
+      }
+      .sb-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        white-space: nowrap;
+        letter-spacing: -0.01em;
+      }
+      .sb-sub {
+        font-size: 10px;
+        color: var(--text3);
+        white-space: nowrap;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .sb-nav {
+        flex: 1;
+        padding: 8px 0;
+        overflow-y: auto;
+        min-width: var(--sidebar-w);
+      }
+      .sb-section {
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        padding: 12px 16px 4px;
+      }
+      .sb-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text2);
+        white-space: nowrap;
+        transition: var(--tr);
+        position: relative;
         border-left: 3px solid transparent;
       }
-      .nav-item:hover,
-      .nav-item.active {
+      .sb-item:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .sb-item.on {
+        background: var(--red-l);
+        color: var(--red-m);
+        font-weight: 600;
+        border-left: 3px solid var(--red-m);
+      }
+      .sb-item i {
+        width: 16px;
+        text-align: center;
+        opacity: 0.75;
+        font-size: 13px;
+      }
+      .sb-item.on i {
+        opacity: 1;
+      }
+      .sb-badge {
+        margin-left: auto;
+        background: var(--red-m);
         color: #fff;
+        font-size: 10px;
+        border-radius: 99px;
+        padding: 1px 7px;
+      }
+      .sb-foot {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        min-width: var(--sidebar-w);
+      }
+
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .topbar {
+        background: rgba(10, 14, 26, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .hbg {
+        cursor: pointer;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4.5px;
+        border-radius: var(--rs);
+        transition: var(--tr);
+      }
+      .hbg:hover {
+        background: var(--surface2);
+      }
+      .hbg span {
+        display: block;
+        width: 16px;
+        height: 1.5px;
+        background: var(--text2);
+        border-radius: 99px;
+      }
+      .tb-title {
+        font-size: 15px;
+        font-weight: 600;
+        flex: 1;
+        color: #fff;
+      }
+      .tb-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ib {
+        width: 34px;
+        height: 34px;
+        border-radius: var(--rs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--tr);
+        color: var(--text2);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-size: 13px;
+      }
+      .ib:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .alert-dot {
+        position: relative;
+      }
+      .alert-dot::after {
+        content: "";
+        position: absolute;
+        top: 7px;
+        right: 7px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--red-m);
+        border: 1.5px solid var(--surface);
+      }
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      .page {
+        display: none;
+        animation: fi 0.22s ease;
+      }
+      .page.on {
+        display: block;
+      }
+      @keyframes fi {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .g4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .g3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .g73 {
+        display: grid;
+        grid-template-columns: 7fr 3fr;
+        gap: 12px;
+      }
+      .mt {
+        margin-top: 12px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        padding: 16px;
+        transition: var(--tr);
+      }
+      .card:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      }
+      .ct {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ct i {
+        opacity: 0.6;
+        font-size: 13px;
+      }
+
+      .sc {
+        background: var(--surface2);
+        border-radius: var(--rs);
+        padding: 14px 16px;
+        transition: var(--tr);
+        border: 1px solid var(--border);
+      }
+      .sc:hover {
+        transform: translateY(-2px);
+      }
+      .sl {
+        font-size: 12px;
+        color: var(--text2);
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sv {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .ss {
+        font-size: 11px;
+        color: var(--text3);
+        margin-top: 3px;
+      }
+      .stag {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 11px;
+        padding: 2px 7px;
+        border-radius: 99px;
+        margin-top: 5px;
+      }
+      .sup {
+        background: var(--red-l);
+        color: var(--red-m);
+      }
+      .sdn {
+        background: var(--teal-l);
+        color: var(--teal);
+      }
+
+      .pb {
+        height: 5px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 99px;
+        overflow: hidden;
+        margin-top: 7px;
+      }
+      .pf {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 1s ease;
+      }
+      .p-r {
+        background: var(--red-m);
+      }
+      .p-b {
+        background: var(--blue);
+      }
+      .p-t {
+        background: var(--teal);
+      }
+      .p-a {
+        background: var(--amber);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 99px;
+        font-weight: 500;
+      }
+      .b-r {
+        background: var(--red-l);
+        color: var(--red-m);
+      }
+      .b-b {
+        background: var(--blue-l);
+        color: var(--blue);
+      }
+      .b-t {
+        background: var(--teal-l);
+        color: var(--teal);
+      }
+      .b-a {
+        background: var(--amber-l);
+        color: var(--amber);
+      }
+      .b-p {
+        background: var(--purple-l);
+        color: var(--purple);
+      }
+
+      .alert-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .alert-item:last-child {
+        border-bottom: none;
+      }
+      .aicon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+        font-size: 13px;
+      }
+      .at {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .as {
+        font-size: 11px;
+        color: var(--text3);
+        margin-top: 2px;
+      }
+
+      .reg-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .reg-item:last-child {
+        border-bottom: none;
+      }
+      .reg-name {
+        font-size: 13px;
+        flex: 1;
+        color: var(--text2);
+      }
+      .reg-val {
+        font-size: 13px;
+        font-weight: 600;
+        min-width: 50px;
+        text-align: right;
+        color: var(--text);
+      }
+      .reg-bar {
+        flex: 2;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .reg-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: var(--red-m);
+      }
+
+      .fi-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .fi-input {
+        padding: 8px 10px 8px 32px;
+        border: 1px solid var(--border);
+        border-radius: var(--rs);
+        background: var(--surface2);
+        color: var(--text);
+        font-size: 13px;
+        flex: 1;
+        min-width: 150px;
+        font-family: inherit;
+      }
+      .fi-input:focus {
+        outline: none;
+        border-color: var(--red-m);
+        box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1);
+      }
+      .fi-sel {
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--rs);
+        background: var(--surface2);
+        color: var(--text);
+        font-size: 13px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .fi-sel:focus {
+        outline: none;
+        border-color: var(--red-m);
+      }
+      .si-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 150px;
+      }
+      .si-ico {
+        position: absolute;
+        left: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text3);
+        font-size: 13px;
+      }
+
+      .dtable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .dtable th {
+        background: var(--red-l);
+        color: var(--red-m);
+        padding: 9px 12px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .dtable td {
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        color: var(--text2);
+      }
+      .dtable tr:hover td {
+        background: var(--surface2);
+      }
+      .dtable tr.exp-row td {
+        background: rgba(192, 57, 43, 0.06);
+        padding: 0;
+      }
+      .exp-detail {
+        padding: 14px 12px;
+        font-size: 12px;
+        line-height: 1.8;
+      }
+      .exp-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .exp-cell {
+        background: var(--surface);
+        border-radius: var(--rs);
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+      }
+      .exp-lbl {
+        font-size: 10px;
+        color: var(--text3);
+        margin-bottom: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .exp-val {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .row-toggle {
+        cursor: pointer;
+        color: var(--red-m);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        transition: var(--tr);
+        font-family: inherit;
+      }
+      .row-toggle:hover {
+        background: var(--red-l);
+      }
+
+      .btn-p {
+        background: var(--red-m);
+        color: #fff;
+        border: none;
+        padding: 9px 18px;
+        border-radius: var(--rs);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--tr);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: inherit;
+      }
+      .btn-p:hover {
+        background: var(--red);
+      }
+      .btn-s {
+        background: var(--surface2);
+        color: var(--text2);
+        border: 1px solid var(--border);
+        padding: 8px 14px;
+        border-radius: var(--rs);
+        font-size: 13px;
+        cursor: pointer;
+        transition: var(--tr);
+        font-family: inherit;
+      }
+      .btn-s:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+      }
+
+      .report-doc {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        overflow: hidden;
+      }
+      .report-bar {
+        background: var(--surface2);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .report-body {
+        padding: 28px 32px;
+        font-size: 13px;
+        line-height: 1.8;
+        color: var(--text2);
+      }
+      .rep-hdr {
+        border-bottom: 2px solid var(--red-m);
+        padding-bottom: 14px;
+        margin-bottom: 18px;
+      }
+      .rep-agency {
+        font-size: 10px;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .rep-title {
+        font-size: 19px;
+        font-weight: 600;
+        color: var(--red-m);
+      }
+      .rep-meta {
+        font-size: 11px;
+        color: var(--text3);
+        margin-top: 3px;
+      }
+      .rep-stitle {
+        font-size: 12px;
+        font-weight: 600;
+        border-left: 3px solid var(--red-m);
+        padding-left: 9px;
+        margin-bottom: 10px;
+        color: var(--text);
+      }
+      .rep-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .rep-table th {
+        background: var(--red-l);
+        color: var(--red-m);
+        padding: 8px 10px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .rep-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text2);
+      }
+
+      .user-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .user-row:last-child {
+        border-bottom: none;
+      }
+      .user-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--red-m);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .user-name {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .user-email {
+        font-size: 11px;
+        color: var(--text3);
+        margin-top: 1px;
+      }
+      .user-role {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .skeleton {
         background: linear-gradient(
           90deg,
-          rgba(192, 57, 43, 0.1) 0%,
-          transparent 100%
+          var(--surface2) 25%,
+          rgba(255, 255, 255, 0.04) 50%,
+          var(--surface2) 75%
         );
-        border-left: 3px solid var(--accent);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 6px;
+        height: 28px;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+      }
+      .tl {
+        position: relative;
+        padding-left: 24px;
+      }
+      .tl::before {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 0;
+        bottom: 0;
+        width: 1.5px;
+        background: var(--border);
+      }
+      .tl-item {
+        position: relative;
+        margin-bottom: 14px;
+      }
+      .tl-dot {
+        position: absolute;
+        left: -21px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        top: 2px;
+        border: 2px solid var(--surface);
+      }
+      @keyframes pu {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.4;
+          transform: scale(1.4);
+        }
+      }
+      @media (max-width: 680px) {
+        .sidebar {
+          position: absolute;
+          height: 100%;
+          box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+        }
+        .g4,
+        .g3 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .g2,
+        .g73 {
+          grid-template-columns: 1fr;
+        }
+        .content {
+          padding: 12px;
+        }
+        .exp-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .report-body {
+          padding: 18px;
+        }
+      }
+      @media (max-width: 430px) {
+        .g4,
+        .g3 {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
-  <body class="flex h-screen overflow-hidden">
-    <nav id="sidebar" class="flex flex-col border-r border-white/5">
-      <div class="p-10 mb-4 flex items-center gap-3">
-        <div
-          class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-900/40"
-        >
-          <i class="fas fa-user-shield text-white"></i>
+  <body>
+    <div id="loading-screen">
+      <div class="ls-ribbon"></div>
+      <div class="ls-logo"><i class="fas fa-user-shield"></i></div>
+      <div class="ls-title">Admin Console</div>
+      <div class="ls-sub">DOH Philippines · HARP Repository</div>
+      <div class="ls-bar-wrap"><div class="ls-bar" id="ls-bar"></div></div>
+      <div class="ls-status" id="ls-status">Initializing secure session…</div>
+      <div class="ls-credits">
+        <div class="ls-credits-label">Developed by</div>
+        <div class="ls-names">
+          <span class="ls-chip">Catubig</span>
+          <span class="ls-chip">Malalis</span>
+          <span class="ls-chip">Borres</span>
+          <span class="ls-chip">Japon</span>
         </div>
-        <h1 class="font-black text-white leading-none tracking-tighter text-xl">
-          ADMIN<br /><span
-            class="text-red-500 text-[10px] font-bold tracking-widest uppercase"
-            >Console</span
+      </div>
+    </div>
+
+    <div id="app-root">
+      <nav class="sidebar" id="sidebar">
+        <div class="sb-brand">
+          <div class="sb-logo"><i class="fas fa-user-shield"></i></div>
+          <div>
+            <div class="sb-name">ADMIN CONSOLE</div>
+            <div class="sb-sub">DOH · HARP System</div>
+          </div>
+        </div>
+        <div class="sb-nav">
+          <div class="sb-section">Overview</div>
+          <div class="sb-item on" onclick="nav('overview', this)">
+            <i class="fas fa-toolbox"></i>System Overview
+          </div>
+          <div class="sb-item" onclick="nav('users', this)">
+            <i class="fas fa-users-gear"></i>User Management
+          </div>
+          <div class="sb-section">Data</div>
+          <div class="sb-item" onclick="nav('repo', this)">
+            <i class="fas fa-database"></i>Case Repository
+          </div>
+          <div class="sb-item" onclick="nav('analytics', this)">
+            <i class="fas fa-chart-line"></i>Analytics
+          </div>
+          <div class="sb-item" onclick="nav('reports', this)">
+            <i class="fas fa-file-lines"></i>Reports
+          </div>
+          <div class="sb-section">System</div>
+          <div class="sb-item" onclick="nav('alerts', this)">
+            <i class="fas fa-bell"></i>Alerts
+            <span class="sb-badge" id="alert-badge">—</span>
+          </div>
+          <div class="sb-item" onclick="nav('logs', this)">
+            <i class="fas fa-scroll"></i>Audit Logs
+          </div>
+        </div>
+        <div class="sb-foot">
+          <button
+            onclick="logoutUser()"
+            style="
+              width: 100%;
+              padding: 9px 14px;
+              background: var(--red-l);
+              border: 1px solid rgba(192, 57, 43, 0.3);
+              border-radius: var(--rs);
+              color: var(--red-m);
+              font-size: 13px;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              font-family: inherit;
+              transition: var(--tr);
+            "
+            onmouseover="this.style.background = 'rgba(192,57,43,.22)'"
+            onmouseout="this.style.background = 'var(--red-l)'"
           >
-        </h1>
-      </div>
-      <div class="flex-1">
-        <a href="#" class="nav-item active"
-          ><i class="fas fa-toolbox"></i> System Overview</a
-        >
-        <a href="#" class="nav-item"
-          ><i class="fas fa-users-gear"></i> User Management</a
-        >
-        <a href="#" class="nav-item"
-          ><i class="fas fa-database"></i> Database Logs</a
-        >
-      </div>
-      <div class="p-8">
-        <button
-          onclick="logoutUser()"
-          class="w-full p-4 glass-card text-red-500 font-bold text-xs flex items-center justify-center gap-3 hover:bg-red-500/10 transition"
-        >
-          <i class="fas fa-power-off"></i> EXIT CONSOLE
-        </button>
-      </div>
-    </nav>
-
-    <main class="flex-1 flex flex-col overflow-hidden">
-      <header class="h-24 flex items-center justify-between px-12">
-        <h2 class="text-xl font-bold text-white tracking-tight">
-          Administrative Privileges Active
-        </h2>
-        <div
-          class="text-xs font-mono text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20"
-        >
-          SECURE_ROOT_ACCESS
+            <i class="fas fa-power-off"></i> Exit Console
+          </button>
         </div>
-      </header>
-      <div class="p-12">
-        <div class="glass-card p-10">
-          <h3 class="text-white font-bold mb-4">Welcome, System Admin</h3>
-          <p class="text-slate-400 text-sm">
-            Use this panel to manage health officer access and system-wide
-            surveillance settings.
-          </p>
+      </nav>
+
+      <div class="main">
+        <div class="topbar">
+          <div class="hbg" onclick="toggleSB()">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="tb-title" id="pg-title">System Overview</div>
+          <div class="tb-right">
+            <div
+              class="ib alert-dot"
+              title="Alerts"
+              onclick="
+                nav('alerts', document.querySelector('.sb-item:nth-child(8)'))
+              "
+            >
+              <i class="fas fa-bell"></i>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <div
+                style="
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 50%;
+                  background: linear-gradient(135deg, #c0392b, #e74c3c);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 11px;
+                  font-weight: 700;
+                  color: #fff;
+                "
+                id="admin-avatar"
+              >
+                AD
+              </div>
+              <div>
+                <div
+                  style="font-size: 12px; font-weight: 600; color: var(--text)"
+                  id="admin-name"
+                >
+                  System Admin
+                </div>
+                <div
+                  style="
+                    font-size: 10px;
+                    color: var(--red-m);
+                    letter-spacing: 0.04em;
+                  "
+                >
+                  ROOT ACCESS
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content">
+          <!-- SYSTEM OVERVIEW -->
+          <div class="page on" id="p-overview">
+            <div style="margin-bottom: 16px">
+              <div style="font-size: 11px; color: var(--text3)">
+                Administrative Dashboard · Live Data
+              </div>
+              <div
+                style="
+                  font-size: 19px;
+                  font-weight: 700;
+                  margin-top: 2px;
+                  color: var(--text);
+                "
+              >
+                System Overview
+              </div>
+            </div>
+            <div class="g4">
+              <div class="sc">
+                <div class="sl">
+                  <i
+                    class="fas fa-circle"
+                    style="color: var(--red-m); font-size: 9px"
+                  ></i
+                  >Total Active Cases
+                </div>
+                <div class="sv" style="color: var(--red-m)" id="stat-total">
+                  —
+                </div>
+                <div class="ss">All-time cumulative</div>
+                <div class="stag sup">National Registry</div>
+              </div>
+              <div class="sc">
+                <div class="sl">New Cases (This Year)</div>
+                <div class="sv" style="color: var(--red-m)" id="stat-year">
+                  —
+                </div>
+                <div class="pb">
+                  <div
+                    class="pf p-r"
+                    id="stat-year-bar"
+                    style="width: 0%"
+                  ></div>
+                </div>
+                <div class="stag sup" id="stat-year-tag">Current year</div>
+              </div>
+              <div class="sc">
+                <div class="sl">Currently on ART</div>
+                <div class="sv" style="color: var(--teal)" id="stat-art">—</div>
+                <div class="pb">
+                  <div class="pf p-t" id="stat-art-bar" style="width: 0%"></div>
+                </div>
+                <div class="stag sdn" id="stat-art-pct">Loading…</div>
+              </div>
+              <div class="sc">
+                <div class="sl">AIDS-related Deaths</div>
+                <div class="sv" style="color: var(--amber)" id="stat-deceased">
+                  —
+                </div>
+                <div class="ss">Total recorded</div>
+                <div class="stag sup">Monitored</div>
+              </div>
+            </div>
+
+            <div class="g73 mt">
+              <div class="card">
+                <div class="ct">
+                  <i class="fas fa-chart-line"></i>Annual HIV Case Trend
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 14px;
+                    margin-bottom: 10px;
+                    font-size: 11px;
+                    color: var(--text2);
+                  "
+                >
+                  <span style="display: flex; align-items: center; gap: 4px"
+                    ><span
+                      style="
+                        width: 10px;
+                        height: 3px;
+                        background: #c0392b;
+                        border-radius: 2px;
+                        display: inline-block;
+                      "
+                    ></span
+                    >New cases</span
+                  >
+                  <span style="display: flex; align-items: center; gap: 4px"
+                    ><span
+                      style="
+                        width: 10px;
+                        height: 3px;
+                        background: #1a56db;
+                        border-radius: 2px;
+                        display: inline-block;
+                      "
+                    ></span
+                    >On ART</span
+                  >
+                </div>
+                <div class="chart-wrap" style="height: 180px">
+                  <canvas id="trendChart"></canvas>
+                </div>
+              </div>
+              <div class="card">
+                <div class="ct">
+                  <i class="fas fa-triangle-exclamation"></i>Active Alerts
+                </div>
+                <div id="overview-alerts">
+                  <div class="skeleton" style="margin-bottom: 8px"></div>
+                  <div class="skeleton" style="margin-bottom: 8px"></div>
+                  <div class="skeleton"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="g2 mt">
+              <div class="card">
+                <div class="ct">
+                  <i class="fas fa-map-location-dot"></i>Regional Case
+                  Distribution
+                </div>
+                <div id="region-list">
+                  <div class="skeleton" style="margin-bottom: 8px"></div>
+                  <div class="skeleton" style="margin-bottom: 8px"></div>
+                  <div class="skeleton"></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="ct">
+                  <i class="fas fa-chart-pie"></i>Transmission Mode Breakdown
+                </div>
+                <div class="chart-wrap" style="height: 160px">
+                  <canvas id="transChart"></canvas>
+                </div>
+                <div
+                  id="trans-legend"
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 6px;
+                    margin-top: 10px;
+                    font-size: 11px;
+                    color: var(--text2);
+                  "
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- USER MANAGEMENT -->
+          <div class="page" id="p-users">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 16px;
+                flex-wrap: wrap;
+                gap: 8px;
+              "
+            >
+              <div>
+                <div style="font-size: 11px; color: var(--text3)">
+                  Admin · Access Control
+                </div>
+                <div
+                  style="font-size: 19px; font-weight: 700; color: var(--text)"
+                >
+                  User Management
+                </div>
+              </div>
+            </div>
+            <div class="g3" style="margin-bottom: 12px">
+              <div class="sc">
+                <div class="sl">Total Users</div>
+                <div class="sv" style="color: var(--blue)" id="user-total">
+                  —
+                </div>
+                <div class="ss">Registered accounts</div>
+              </div>
+              <div class="sc">
+                <div class="sl">Active Users</div>
+                <div class="sv" style="color: var(--teal)" id="user-active">
+                  —
+                </div>
+                <div class="pb">
+                  <div
+                    class="pf p-t"
+                    id="user-active-bar"
+                    style="width: 0%"
+                  ></div>
+                </div>
+              </div>
+              <div class="sc">
+                <div class="sl">Admins</div>
+                <div class="sv" style="color: var(--red-m)" id="user-admins">
+                  —
+                </div>
+                <div class="ss">Root access</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ct"><i class="fas fa-users"></i>All Users</div>
+              <div class="fi-wrap" style="margin-bottom: 16px">
+                <div class="si-wrap">
+                  <i class="fas fa-search si-ico"></i
+                  ><input
+                    class="fi-input"
+                    placeholder="Search users..."
+                    id="user-search"
+                    oninput="filterUsers()"
+                  />
+                </div>
+                <select class="fi-sel" id="f-role" onchange="filterUsers()">
+                  <option value="">All Roles</option>
+                  <option>admin</option>
+                  <option>health_officer</option>
+                  <option>researcher</option>
+                  <option>data_encoder</option>
+                </select>
+              </div>
+              <div id="user-list">
+                <div
+                  class="skeleton"
+                  style="margin-bottom: 10px; height: 44px"
+                ></div>
+                <div
+                  class="skeleton"
+                  style="margin-bottom: 10px; height: 44px"
+                ></div>
+                <div class="skeleton" style="height: 44px"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CASE REPOSITORY -->
+          <div class="page" id="p-repo">
+            <div
+              style="font-size: 11px; color: var(--text3); margin-bottom: 2px"
+            >
+              Admin · Data
+            </div>
+            <div
+              style="
+                font-size: 19px;
+                font-weight: 700;
+                margin-bottom: 14px;
+                color: var(--text);
+              "
+            >
+              Case Repository
+            </div>
+            <div class="card" style="margin-bottom: 12px">
+              <div class="fi-wrap">
+                <div class="si-wrap">
+                  <i class="fas fa-search si-ico"></i
+                  ><input
+                    class="fi-input"
+                    placeholder="Search case code, region, municipality..."
+                    id="repo-search"
+                    oninput="filterRepo()"
+                  />
+                </div>
+                <select class="fi-sel" id="f-gender" onchange="filterRepo()">
+                  <option value="">All Genders</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="transgender">Transgender</option>
+                </select>
+                <select class="fi-sel" id="f-art" onchange="filterRepo()">
+                  <option value="">All ART Status</option>
+                  <option value="on_art">On ART</option>
+                  <option value="not_yet">Not Yet</option>
+                  <option value="lost_to_followup">Lost to Followup</option>
+                  <option value="deceased">Deceased</option>
+                </select>
+                <select class="fi-sel" id="f-year" onchange="filterRepo()">
+                  <option value="">All Years</option>
+                  <option>2025</option>
+                  <option>2024</option>
+                  <option>2023</option>
+                  <option>2022</option>
+                </select>
+              </div>
+              <div style="font-size: 12px; color: var(--text3)" id="repo-count">
+                Loading…
+              </div>
+            </div>
+            <div class="card" style="overflow-x: auto">
+              <table class="dtable">
+                <thead>
+                  <tr>
+                    <th>Case Code</th>
+                    <th>Year</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Region</th>
+                    <th>Transmission</th>
+                    <th>ART Status</th>
+                    <th>Stage</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="repo-body">
+                  <tr>
+                    <td
+                      colspan="9"
+                      style="
+                        text-align: center;
+                        padding: 24px;
+                        color: var(--text3);
+                      "
+                    >
+                      <i class="fas fa-spinner fa-spin"></i> Loading cases…
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ANALYTICS -->
+          <div class="page" id="p-analytics">
+            <div
+              style="font-size: 11px; color: var(--text3); margin-bottom: 2px"
+            >
+              Admin · Visualization
+            </div>
+            <div
+              style="
+                font-size: 19px;
+                font-weight: 700;
+                margin-bottom: 14px;
+                color: var(--text);
+              "
+            >
+              Analytics
+            </div>
+            <div class="g3">
+              <div class="sc">
+                <div class="sl">Total Cases (Active)</div>
+                <div class="sv" style="color: var(--red-m)" id="an-total">
+                  —
+                </div>
+              </div>
+              <div class="sc">
+                <div class="sl">ART Coverage</div>
+                <div class="sv" style="color: var(--teal)" id="an-art-pct">
+                  —
+                </div>
+                <div class="pb">
+                  <div class="pf p-t" id="an-art-bar" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="sc">
+                <div class="sl">Cases This Year</div>
+                <div class="sv" style="color: var(--amber)" id="an-year">—</div>
+              </div>
+            </div>
+            <div class="g2 mt">
+              <div class="card">
+                <div class="ct">
+                  <i class="fas fa-venus-mars"></i>Cases by Gender
+                </div>
+                <div class="chart-wrap" style="height: 200px">
+                  <canvas id="genderChart"></canvas>
+                </div>
+              </div>
+              <div class="card">
+                <div class="ct">
+                  <i class="fas fa-users"></i>Age Group Distribution
+                </div>
+                <div class="chart-wrap" style="height: 200px">
+                  <canvas id="ageChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="card mt">
+              <div class="ct">
+                <i class="fas fa-calendar-days"></i>Cases by Year
+              </div>
+              <div class="chart-wrap" style="height: 180px">
+                <canvas id="yearChart"></canvas>
+              </div>
+            </div>
+            <div class="card mt">
+              <div class="ct">
+                <i class="fas fa-map"></i>ART Coverage by Region
+              </div>
+              <div class="chart-wrap" style="height: 240px">
+                <canvas id="artChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- REPORTS -->
+          <div class="page" id="p-reports">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+                flex-wrap: wrap;
+                gap: 8px;
+              "
+            >
+              <div>
+                <div style="font-size: 11px; color: var(--text3)">
+                  Admin · Documents
+                </div>
+                <div
+                  style="font-size: 19px; font-weight: 700; color: var(--text)"
+                >
+                  Report Generation
+                </div>
+              </div>
+              <button class="btn-p" onclick="mockDl(event)">
+                <i class="fas fa-download"></i> Download PDF
+              </button>
+            </div>
+            <div class="report-doc">
+              <div class="report-bar">
+                <span style="font-size: 12px; color: var(--text2)"
+                  >Document preview — Live data snapshot</span
+                >
+                <div style="margin-left: auto; display: flex; gap: 6px">
+                  <button
+                    class="btn-s"
+                    style="padding: 4px 10px; font-size: 11px"
+                    onclick="window.print()"
+                  >
+                    <i class="fas fa-print"></i> Print
+                  </button>
+                </div>
+              </div>
+              <div class="report-body">
+                <div class="rep-hdr">
+                  <div class="rep-agency">
+                    Republic of the Philippines · Department of Health
+                  </div>
+                  <div class="rep-title">
+                    HIV/AIDS Surveillance Report — Admin Summary
+                  </div>
+                  <div class="rep-meta" id="rep-meta">
+                    HIV/AIDS & ART Registry of the Philippines (HARP) ·
+                    Generated on load
+                  </div>
+                </div>
+                <div style="margin-bottom: 18px">
+                  <div class="rep-stitle">I. Executive Summary</div>
+                  <div
+                    style="font-size: 13px; line-height: 1.8"
+                    id="rep-summary"
+                  >
+                    Loading live data…
+                  </div>
+                </div>
+                <div style="margin-bottom: 18px">
+                  <div class="rep-stitle">II. Annual Case Summary</div>
+                  <table class="rep-table" id="rep-annual-table">
+                    <thead>
+                      <tr>
+                        <th>Year</th>
+                        <th>Region</th>
+                        <th>Total Cases</th>
+                        <th>On ART</th>
+                        <th>ART Coverage</th>
+                      </tr>
+                    </thead>
+                    <tbody id="rep-annual-body">
+                      <tr>
+                        <td
+                          colspan="5"
+                          style="text-align: center; color: var(--text3)"
+                        >
+                          Loading…
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <div class="rep-stitle">III. Facility Performance</div>
+                  <table class="rep-table">
+                    <thead>
+                      <tr>
+                        <th>Facility</th>
+                        <th>Region</th>
+                        <th>Total Cases</th>
+                        <th>On ART</th>
+                        <th>Last Submission</th>
+                      </tr>
+                    </thead>
+                    <tbody id="rep-facility-body">
+                      <tr>
+                        <td
+                          colspan="5"
+                          style="text-align: center; color: var(--text3)"
+                        >
+                          Loading…
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ALERTS -->
+          <div class="page" id="p-alerts">
+            <div
+              style="font-size: 11px; color: var(--text3); margin-bottom: 2px"
+            >
+              Admin · Monitoring
+            </div>
+            <div
+              style="
+                font-size: 19px;
+                font-weight: 700;
+                margin-bottom: 14px;
+                color: var(--text);
+              "
+            >
+              Alert & Monitoring System
+            </div>
+            <div id="alerts-grid" class="g3" style="margin-bottom: 12px">
+              <div class="skeleton" style="height: 140px"></div>
+              <div class="skeleton" style="height: 140px"></div>
+              <div class="skeleton" style="height: 140px"></div>
+            </div>
+            <div class="card">
+              <div class="ct">
+                <i class="fas fa-clock-rotate-left"></i>System Timeline
+              </div>
+              <div class="tl" id="alerts-timeline">
+                <div class="tl-item">
+                  <div class="tl-dot" style="background: var(--red-m)"></div>
+                  <div>
+                    <div
+                      style="
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: var(--text);
+                      "
+                    >
+                      Loading events…
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AUDIT LOGS -->
+          <div class="page" id="p-logs">
+            <div
+              style="font-size: 11px; color: var(--text3); margin-bottom: 2px"
+            >
+              Admin · Security
+            </div>
+            <div
+              style="
+                font-size: 19px;
+                font-weight: 700;
+                margin-bottom: 14px;
+                color: var(--text);
+              "
+            >
+              Audit Logs
+            </div>
+            <div class="card">
+              <div class="ct">
+                <i class="fas fa-scroll"></i>Recent System Activity
+              </div>
+              <div style="overflow-x: auto">
+                <table class="dtable">
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Module</th>
+                      <th>Table</th>
+                      <th>IP Address</th>
+                    </tr>
+                  </thead>
+                  <tbody id="audit-body">
+                    <tr>
+                      <td
+                        colspan="6"
+                        style="
+                          text-align: center;
+                          padding: 24px;
+                          color: var(--text3);
+                        "
+                      >
+                        <i class="fas fa-spinner fa-spin"></i> Loading logs…
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </main>
+    </div>
 
-    <script src="../assets/js/supabaseClient.js"></script>
-    <script src="../assets/js/app.js"></script>
+    <script>
+      const SUPABASE_URL = "https://vqwlrrhrgpiiualbetsf.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_dHKEoT8RgBRTwTYuQCJsbA_VzFJ0Jae";
+      const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const pageNav = {
+        overview: "System Overview",
+        users: "User Management",
+        repo: "Case Repository",
+        analytics: "Analytics",
+        reports: "Report Generation",
+        alerts: "Alert & Monitoring",
+        logs: "Audit Logs",
+      };
+      let allCases = [],
+        allUsers = [],
+        chartsInited = false,
+        openRow = null;
+
+      function nav(id, el) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("on"));
+        document
+          .querySelectorAll(".sb-item")
+          .forEach((n) => n.classList.remove("on"));
+        document.getElementById("p-" + id).classList.add("on");
+        el.classList.add("on");
+        document.getElementById("pg-title").textContent =
+          pageNav[id] || "Admin Console";
+        if (window.innerWidth < 680)
+          document.getElementById("sidebar").classList.add("off");
+        if (id === "analytics" || id === "overview")
+          setTimeout(initCharts, 100);
+      }
+      function toggleSB() {
+        document.getElementById("sidebar").classList.toggle("off");
+      }
+
+      async function logoutUser() {
+        await sb.auth.signOut();
+        window.location.href = "login.html";
+      }
+
+      function fmt(n) {
+        return n != null ? Number(n).toLocaleString() : "—";
+      }
+      function pct(a, b) {
+        return b ? Math.round((a / b) * 100) + "%" : "—";
+      }
+      function initials(name) {
+        return name
+          ? name
+              .split(" ")
+              .map((w) => w[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase()
+          : "??";
+      }
+      function avatarColor(role) {
+        return (
+          {
+            admin: "var(--red-m)",
+            health_officer: "var(--blue)",
+            researcher: "var(--purple)",
+            data_encoder: "var(--amber)",
+            viewer: "var(--teal)",
+          }[role] || "var(--text3)"
+        );
+      }
+      function roleBadge(role) {
+        const m = {
+          admin: "b-r",
+          health_officer: "b-b",
+          researcher: "b-p",
+          data_encoder: "b-a",
+          viewer: "b-t",
+        };
+        return `<span class="badge ${m[role] || "b-t"}">${role}</span>`;
+      }
+
+      async function loadDashboardSummary() {
+        const { data, error } = await sb
+          .from("v_dashboard_summary")
+          .select("*")
+          .single();
+        if (error || !data) return;
+        document.getElementById("stat-total").textContent = fmt(
+          data.total_active_cases,
+        );
+        document.getElementById("stat-year").textContent = fmt(
+          data.cases_this_year,
+        );
+        document.getElementById("stat-art").textContent = fmt(
+          data.total_on_art,
+        );
+        document.getElementById("stat-deceased").textContent = fmt(
+          data.total_deceased,
+        );
+        document.getElementById("an-total").textContent = fmt(
+          data.total_active_cases,
+        );
+        document.getElementById("an-year").textContent = fmt(
+          data.cases_this_year,
+        );
+        const artPct = data.overall_art_pct || 0;
+        document.getElementById("stat-art-pct").textContent =
+          artPct + "% ART coverage";
+        document.getElementById("stat-art-bar").style.width = artPct + "%";
+        document.getElementById("an-art-pct").textContent = artPct + "%";
+        document.getElementById("an-art-bar").style.width = artPct + "%";
+        const yearPct = data.total_active_cases
+          ? Math.min(
+              100,
+              Math.round(
+                (data.cases_this_year / data.total_active_cases) * 300,
+              ),
+            )
+          : 0;
+        document.getElementById("stat-year-bar").style.width = yearPct + "%";
+      }
+
+      async function loadRegionDistribution() {
+        const { data } = await sb
+          .from("hiv_cases")
+          .select("region_id,regions(region_name)")
+          .eq("is_active", true);
+        if (!data) return;
+        const counts = {};
+        data.forEach((r) => {
+          const name = r.regions?.region_name || "Unknown";
+          counts[name] = (counts[name] || 0) + 1;
+        });
+        const sorted = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 7);
+        const max = sorted[0]?.[1] || 1;
+        const el = document.getElementById("region-list");
+        el.innerHTML = sorted
+          .map(
+            ([name, count]) => `
+    <div class="reg-item">
+      <div class="reg-name">${name.replace("Region ", "R").replace(" — ", "—").split("—")[0].trim()}</div>
+      <div class="reg-bar"><div class="reg-fill" style="width:${Math.round((count / max) * 100)}%"></div></div>
+      <div class="reg-val">${fmt(count)}</div>
+    </div>`,
+          )
+          .join("");
+        return sorted;
+      }
+
+      async function loadTransmission() {
+        const { data } = await sb
+          .from("hiv_cases")
+          .select("transmission_mode")
+          .eq("is_active", true);
+        if (!data) return;
+        const counts = {};
+        data.forEach((r) => {
+          const m = r.transmission_mode || "unknown";
+          counts[m] = (counts[m] || 0) + 1;
+        });
+        const labels = Object.keys(counts);
+        const values = labels.map((l) => counts[l]);
+        const colors = [
+          "#c0392b",
+          "#1a56db",
+          "#0e9f6e",
+          "#b45309",
+          "#6c47ff",
+          "#e74c3c",
+        ];
+        const legend = document.getElementById("trans-legend");
+        const total = values.reduce((a, b) => a + b, 0);
+        legend.innerHTML = labels
+          .map(
+            (l, i) =>
+              `<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:${colors[i % colors.length]};display:inline-block"></span>${l} ${total ? Math.round((counts[l] / total) * 100) : 0}%</span>`,
+          )
+          .join("");
+        return { labels, values, colors };
+      }
+
+      async function loadAlerts() {
+        const { data } = await sb
+          .from("alerts")
+          .select("*,regions(region_name)")
+          .eq("is_resolved", false)
+          .order("triggered_at", { ascending: false })
+          .limit(6);
+        const grid = document.getElementById("alerts-grid");
+        const timeline = document.getElementById("alerts-timeline");
+        const badge = document.getElementById("alert-badge");
+        if (!data || !data.length) {
+          grid.innerHTML =
+            '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--text3);padding:32px"><i class="fas fa-check-circle" style="font-size:28px;margin-bottom:8px;color:var(--teal)"></i><br>No active alerts</div>';
+          badge.textContent = "0";
+          timeline.innerHTML =
+            '<div class="tl-item"><div class="tl-dot" style="background:var(--teal)"></div><div style="font-size:13px;color:var(--text2)">No recent events</div></div>';
+          document.getElementById("overview-alerts").innerHTML =
+            '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px"><i class="fas fa-check-circle" style="color:var(--teal)"></i> No active alerts</div>';
+          return;
+        }
+        badge.textContent = data.length;
+        const typeMap = {
+          critical: { border: "var(--red-m)", dot: "var(--red-m)", anim: true },
+          warning: { border: "var(--amber)", dot: "var(--amber)", anim: false },
+          info: { border: "var(--blue)", dot: "var(--blue)", anim: false },
+          success: { border: "var(--teal)", dot: "var(--teal)", anim: false },
+        };
+        grid.innerHTML = data
+          .slice(0, 3)
+          .map((a) => {
+            const t = typeMap[a.alert_type] || typeMap.info;
+            return `<div class="card" style="border:1.5px solid ${t.border}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${t.dot}${t.anim ? ";animation:pu 1.2s infinite" : ""}"></div>
+        <div style="font-size:13px;font-weight:600;color:${t.dot}">${a.alert_type?.charAt(0).toUpperCase() + a.alert_type?.slice(1) || "Alert"}</div>
+      </div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)">${a.title}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">${a.description || ""}</div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        ${a.regions?.region_name ? `<span class="badge b-r">${a.regions.region_name.split("—")[0].trim()}</span>` : ""}
+        ${a.category ? `<span class="badge b-b">${a.category}</span>` : ""}
+      </div>
+    </div>`;
+          })
+          .join("");
+        timeline.innerHTML = data
+          .map((a) => {
+            const t = typeMap[a.alert_type] || typeMap.info;
+            const d = new Date(a.triggered_at).toLocaleDateString("en-PH", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+            return `<div class="tl-item"><div class="tl-dot" style="background:${t.dot}"></div>
+      <div><div style="font-size:13px;font-weight:500;color:var(--text)">${a.title}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">${d} · ${a.category || "System"}</div></div></div>`;
+          })
+          .join("");
+        document.getElementById("overview-alerts").innerHTML = data
+          .slice(0, 4)
+          .map((a) => {
+            const t = typeMap[a.alert_type] || typeMap.info;
+            const iconMap = {
+              critical: "fas fa-triangle-exclamation",
+              warning: "fas fa-circle-info",
+              info: "fas fa-circle-info",
+              success: "fas fa-check-circle",
+            };
+            return `<div class="alert-item"><div class="aicon" style="background:${t.dot.replace("var(--", "rgba(").replace(")", ",0.15)")}"><i class="${iconMap[a.alert_type] || "fas fa-bell"}" style="color:${t.dot}"></i></div>
+      <div><div class="at">${a.title}</div><div class="as">${a.description?.slice(0, 60) || ""}${a.description?.length > 60 ? "…" : ""}</div></div></div>`;
+          })
+          .join("");
+      }
+
+      async function loadUsers() {
+        const { data, error } = await sb
+          .from("users")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error || !data || data.length === 0) {
+          document.getElementById("user-list").innerHTML =
+            '<div style="color:var(--text3);text-align:center;padding:20px">' +
+            (error
+              ? "Failed to load users: " + error.message
+              : "No users found") +
+            "</div>";
+          return;
+        }
+        allUsers = data;
+        const total = data.length;
+        const active = data.filter((u) => u.is_active).length;
+        const admins = data.filter((u) => u.role === "admin").length;
+        document.getElementById("user-total").textContent = total;
+        document.getElementById("user-active").textContent = active;
+        document.getElementById("user-active-bar").style.width =
+          (total ? Math.round((active / total) * 100) : 0) + "%";
+        document.getElementById("user-admins").textContent = admins;
+        renderUsers(data);
+      }
+
+      function renderUsers(data) {
+        const el = document.getElementById("user-list");
+        if (!data.length) {
+          el.innerHTML =
+            '<div style="text-align:center;padding:20px;color:var(--text3)">No users found</div>';
+          return;
+        }
+        el.innerHTML = data
+          .map(
+            (u) => `
+    <div class="user-row" data-name="${u.full_name || ""}" data-email="${u.email || ""}" data-role="${u.role || ""}">
+      <div class="user-avatar" style="background:${avatarColor(u.role)}">${initials(u.full_name)}</div>
+      <div>
+        <div class="user-name">${u.full_name || "—"}</div>
+        <div class="user-email">${u.email || "2014"}</div>
+      </div>
+      <div class="user-role">
+        ${roleBadge(u.role)}
+        <span class="badge ${u.is_active ? "b-t" : "b-r"}" style="margin-left:4px">${u.is_active ? "Active" : "Inactive"}</span>
+      </div>
+    </div>`,
+          )
+          .join("");
+      }
+
+      function filterUsers() {
+        const q = document.getElementById("user-search").value.toLowerCase();
+        const role = document.getElementById("f-role").value;
+        const filtered = allUsers.filter((u) => {
+          const match =
+            (u.full_name || "").toLowerCase().includes(q) ||
+            (u.email || "").toLowerCase().includes(q);
+          const roleMatch = !role || u.role === role;
+          return match && roleMatch;
+        });
+        renderUsers(filtered);
+      }
+
+      async function loadCases() {
+        const { data, error } = await sb
+          .from("hiv_cases")
+          .select("*,regions(region_name),facilities(facility_name)")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(200);
+        if (error || !data || data.length === 0) {
+          document.getElementById("repo-body").innerHTML =
+            '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--red-m)">' +
+            (error ? "Error: " + error.message : "No cases found") +
+            "</td></tr>";
+          document.getElementById("repo-count").textContent = "0 records";
+          return;
+        }
+        const mapped = data.map((c) => ({
+          ...c,
+          region_name: c.regions?.region_name || "—",
+          facility_name: c.facilities?.facility_name || "—",
+        }));
+        allCases = mapped;
+        document.getElementById("repo-count").textContent =
+          `Showing ${mapped.length} records (live)`;
+        renderCases(mapped);
+      }
+
+      function renderCases(data) {
+        const tb = document.getElementById("repo-body");
+        if (!data.length) {
+          tb.innerHTML =
+            '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">No cases found</td></tr>';
+          return;
+        }
+        tb.innerHTML = "";
+        data.forEach((c) => {
+          const artClass =
+            {
+              on_art: "b-t",
+              not_yet: "b-a",
+              lost_to_followup: "b-r",
+              deceased: "b-r",
+              transferred: "b-p",
+            }[c.art_status] || "b-t";
+          const stageClass =
+            { stage1: "b-t", stage2: "b-a", stage3: "b-r", aids: "b-r" }[
+              c.hiv_stage
+            ] || "b-b";
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+      <td style="font-family:monospace;font-size:12px;color:var(--red-m);font-weight:600">${c.case_code || "—"}</td>
+      <td>${c.year_reported || "—"}</td>
+      <td>${c.age_at_diagnosis != null ? c.age_at_diagnosis : "—"}</td>
+      <td>${c.gender || "—"}</td>
+      <td>${c.region_name || "—"}</td>
+      <td>${c.transmission_mode || "—"}</td>
+      <td><span class="badge ${artClass}">${(c.art_status || "—").replace(/_/g, " ")}</span></td>
+      <td><span class="badge ${stageClass}">${(c.hiv_stage || "—").replace(/_/g, " ")}</span></td>
+      <td><button class="row-toggle" onclick="toggleRow('${c.id}')">+</button></td>`;
+          tb.appendChild(tr);
+          const det = document.createElement("tr");
+          det.id = "det-" + c.id;
+          det.className = "exp-row";
+          det.style.display = "none";
+          det.innerHTML = `<td colspan="9"><div class="exp-detail"><div class="exp-grid">
+      <div class="exp-cell"><div class="exp-lbl">Facility</div><div class="exp-val">${c.facility_name || "—"}</div></div>
+      <div class="exp-cell"><div class="exp-lbl">CD4 Count</div><div class="exp-val">${c.cd4_count != null ? c.cd4_count + " cells/µL" : "—"}</div></div>
+      <div class="exp-cell"><div class="exp-lbl">Viral Load</div><div class="exp-val">${(c.viral_load_status || "—").replace(/_/g, " ")}</div></div>
+      <div class="exp-cell"><div class="exp-lbl">Municipality</div><div class="exp-val">${c.municipality || "—"}</div></div>
+      <div class="exp-cell"><div class="exp-lbl">Date Diagnosed</div><div class="exp-val">${c.date_diagnosed || "—"}</div></div>
+      <div class="exp-cell"><div class="exp-lbl">Entered By</div><div class="exp-val">${c.entered_by_name || "—"}</div></div>
+    </div></div></td>`;
+          tb.appendChild(det);
+        });
+      }
+
+      function toggleRow(id) {
+        const row = document.getElementById("det-" + id);
+        if (!row) return;
+        const isOpen = row.style.display !== "none";
+        if (openRow && openRow !== id) {
+          const prev = document.getElementById("det-" + openRow);
+          if (prev) prev.style.display = "none";
+        }
+        row.style.display = isOpen ? "none" : "table-row";
+        openRow = isOpen ? null : id;
+      }
+
+      function filterRepo() {
+        const q = document.getElementById("repo-search").value.toLowerCase();
+        const gender = document.getElementById("f-gender").value;
+        const art = document.getElementById("f-art").value;
+        const year = document.getElementById("f-year").value;
+        const filtered = allCases.filter((c) => {
+          if (q && !JSON.stringify(c).toLowerCase().includes(q)) return false;
+          if (gender && c.gender !== gender) return false;
+          if (art && c.art_status !== art) return false;
+          if (year && String(c.year_reported) !== year) return false;
+          return true;
+        });
+        document.getElementById("repo-count").textContent =
+          `Showing ${filtered.length} of ${allCases.length} records`;
+        renderCases(filtered);
+      }
+
+      async function loadAnnualSummary() {
+        const { data } = await sb
+          .from("v_annual_case_counts")
+          .select("*")
+          .limit(20);
+        if (!data) return;
+        const tb = document.getElementById("rep-annual-body");
+        tb.innerHTML =
+          data
+            .map(
+              (r) => `<tr>
+    <td>${r.year_reported || "—"}</td>
+    <td>${r.region_name || "—"}</td>
+    <td>${fmt(r.total_cases)}</td>
+    <td>${fmt(r.on_art)}</td>
+    <td>${r.art_coverage_pct != null ? r.art_coverage_pct + "%" : "—"}</td>
+  </tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="5" style="text-align:center;color:var(--text3)">No data</td></tr>';
+      }
+
+      async function loadFacilityPerformance() {
+        const { data } = await sb
+          .from("v_facility_performance")
+          .select("*")
+          .order("total_cases", { ascending: false })
+          .limit(10);
+        if (!data) return;
+        const tb = document.getElementById("rep-facility-body");
+        tb.innerHTML =
+          data
+            .map(
+              (r) => `<tr>
+    <td>${r.facility_name || "—"}</td>
+    <td>${r.region_name || "—"}</td>
+    <td>${fmt(r.total_cases)}</td>
+    <td>${fmt(r.on_art)}</td>
+    <td>${r.last_submission ? new Date(r.last_submission).toLocaleDateString("en-PH") : "—"}</td>
+  </tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="5" style="text-align:center;color:var(--text3)">No data</td></tr>';
+      }
+
+      async function loadAuditLogs() {
+        const { data } = await sb
+          .from("audit_logs")
+          .select("*")
+          .order("timestamp", { ascending: false })
+          .limit(50);
+        const tb = document.getElementById("audit-body");
+        if (!data || !data.length) {
+          tb.innerHTML =
+            '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">No audit logs found</td></tr>';
+          return;
+        }
+        tb.innerHTML = data
+          .map(
+            (l) => `<tr>
+    <td style="font-family:monospace;font-size:11px">${new Date(l.timestamp).toLocaleString("en-PH")}</td>
+    <td>${l.ip_address || "—"}</td>
+    <td><span class="badge ${{ INSERT: "b-t", UPDATE: "b-b", DELETE: "b-r", LOGIN: "b-p", VIEW: "b-a", EXPORT: "b-b", LOGIN_FAIL: "b-r" }[l.action] || "b-t"}">${l.action || "—"}</span></td>
+    <td>${l.module || "—"}</td>
+    <td style="font-size:11px;color:var(--text3)">${l.table_affected || "—"}</td>
+    <td style="font-family:monospace;font-size:11px">${l.additional_info || "—"}</td>
+  </tr>`,
+          )
+          .join("");
+      }
+
+      function mockDl(e) {
+        const b = e.target;
+        b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…';
+        b.disabled = true;
+        setTimeout(() => {
+          b.innerHTML = '<i class="fas fa-check"></i> Downloaded!';
+          setTimeout(() => {
+            b.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+            b.disabled = false;
+          }, 2000);
+        }, 1400);
+      }
+
+      let trendC, transC, genderC, ageC, yearC, artC;
+      async function initCharts() {
+        if (chartsInited) return;
+        chartsInited = true;
+        Chart.defaults.color = "#94a3b8";
+        Chart.defaults.font.family = "Plus Jakarta Sans, system-ui, sans-serif";
+        Chart.defaults.font.size = 10;
+        const gridColor = "rgba(255,255,255,.04)";
+
+        const { data: annualData } = await sb
+          .from("v_annual_case_counts")
+          .select("year_reported,total_cases,on_art,region_name")
+          .order("year_reported", { ascending: true });
+        if (annualData) {
+          const years = [
+            ...new Set(annualData.map((r) => r.year_reported)),
+          ].slice(-8);
+          const newCases = years.map((y) =>
+            annualData
+              .filter((r) => r.year_reported === y)
+              .reduce((s, r) => s + (r.total_cases || 0), 0),
+          );
+          const onArt = years.map((y) =>
+            annualData
+              .filter((r) => r.year_reported === y)
+              .reduce((s, r) => s + (r.on_art || 0), 0),
+          );
+          const tc = document.getElementById("trendChart");
+          if (tc && !tc._c)
+            tc._c = new Chart(tc, {
+              type: "line",
+              data: {
+                labels: years,
+                datasets: [
+                  {
+                    label: "New Cases",
+                    data: newCases,
+                    borderColor: "#c0392b",
+                    backgroundColor: "rgba(192,57,43,.08)",
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    borderWidth: 2,
+                  },
+                  {
+                    label: "On ART",
+                    data: onArt,
+                    borderColor: "#1a56db",
+                    backgroundColor: "rgba(26,86,219,.06)",
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    borderWidth: 2,
+                    borderDash: [5, 3],
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: {
+                    ticks: {
+                      callback: (v) =>
+                        v >= 1000 ? Math.round(v / 1000) + "k" : v,
+                    },
+                    grid: { color: gridColor },
+                  },
+                  x: { grid: { color: gridColor } },
+                },
+              },
+            });
+
+          const yc = document.getElementById("yearChart");
+          if (yc && !yc._c)
+            yc._c = new Chart(yc, {
+              type: "bar",
+              data: {
+                labels: years,
+                datasets: [
+                  {
+                    label: "Cases",
+                    data: newCases,
+                    backgroundColor: "rgba(192,57,43,.75)",
+                    borderWidth: 0,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: {
+                    grid: { color: gridColor },
+                    ticks: {
+                      callback: (v) =>
+                        v >= 1000 ? Math.round(v / 1000) + "k" : v,
+                    },
+                  },
+                  x: { grid: { display: false } },
+                },
+              },
+            });
+        }
+
+        const transResult = await loadTransmission();
+        if (transResult) {
+          const trc = document.getElementById("transChart");
+          if (trc && !trc._c)
+            trc._c = new Chart(trc, {
+              type: "doughnut",
+              data: {
+                labels: transResult.labels,
+                datasets: [
+                  {
+                    data: transResult.values,
+                    backgroundColor: transResult.colors,
+                    borderWidth: 0,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: "65%",
+              },
+            });
+        }
+
+        const { data: genderData } = await sb
+          .from("hiv_cases")
+          .select("gender,year_reported")
+          .eq("is_active", true);
+        if (genderData) {
+          const years = [...new Set(genderData.map((r) => r.year_reported))]
+            .sort()
+            .slice(-6);
+          const males = years.map(
+            (y) =>
+              genderData.filter(
+                (r) => r.year_reported === y && r.gender === "male",
+              ).length,
+          );
+          const females = years.map(
+            (y) =>
+              genderData.filter(
+                (r) => r.year_reported === y && r.gender === "female",
+              ).length,
+          );
+          const gc = document.getElementById("genderChart");
+          if (gc && !gc._c)
+            gc._c = new Chart(gc, {
+              type: "bar",
+              data: {
+                labels: years,
+                datasets: [
+                  {
+                    label: "Male",
+                    data: males,
+                    backgroundColor: "rgba(192,57,43,.8)",
+                    borderWidth: 0,
+                    borderRadius: 4,
+                  },
+                  {
+                    label: "Female",
+                    data: females,
+                    backgroundColor: "rgba(14,159,110,.8)",
+                    borderWidth: 0,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { labels: { color: "#94a3b8", boxWidth: 10 } },
+                },
+                scales: {
+                  x: { stacked: true, grid: { display: false } },
+                  y: { stacked: true, grid: { color: gridColor } },
+                },
+              },
+            });
+        }
+
+        const { data: ageData } = await sb
+          .from("hiv_cases")
+          .select("age_group")
+          .eq("is_active", true);
+        if (ageData) {
+          const groups = ["under15", "15to24", "25to34", "35to44", "45plus"];
+          const labels = ["<15", "15–24", "25–34", "35–44", "45+"];
+          const counts = groups.map(
+            (g) => ageData.filter((r) => r.age_group === g).length,
+          );
+          const ac = document.getElementById("ageChart");
+          if (ac && !ac._c)
+            ac._c = new Chart(ac, {
+              type: "bar",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Cases",
+                    data: counts,
+                    backgroundColor: [
+                      "#c0392b",
+                      "#e74c3c",
+                      "#1a56db",
+                      "#0e9f6e",
+                      "#b45309",
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: "y",
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { grid: { color: gridColor } },
+                  y: { grid: { display: false } },
+                },
+              },
+            });
+        }
+
+        const { data: artRegion } = await sb
+          .from("v_annual_case_counts")
+          .select("region_name,total_cases,on_art")
+          .order("total_cases", { ascending: false });
+        if (artRegion) {
+          const regionMap = {};
+          artRegion.forEach((r) => {
+            if (!r.region_name) return;
+            if (!regionMap[r.region_name])
+              regionMap[r.region_name] = { total: 0, art: 0 };
+            regionMap[r.region_name].total += r.total_cases || 0;
+            regionMap[r.region_name].art += r.on_art || 0;
+          });
+          const entries = Object.entries(regionMap)
+            .filter(([, v]) => v.total > 0)
+            .sort((a, b) => b[1].total - a[1].total)
+            .slice(0, 9);
+          const labels = entries.map(([k]) =>
+            k.split("—")[0].trim().replace("Region ", "R"),
+          );
+          const pcts = entries.map(([, v]) =>
+            v.total ? Math.round((v.art / v.total) * 100) : 0,
+          );
+          const arc = document.getElementById("artChart");
+          if (arc && !arc._c)
+            arc._c = new Chart(arc, {
+              type: "bar",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "ART %",
+                    data: pcts,
+                    backgroundColor: labels.map(
+                      (_, i) =>
+                        ["#c0392b", "#1a56db", "#0e9f6e", "#b45309", "#6c47ff"][
+                          i % 5
+                        ] + "bb",
+                    ),
+                    borderWidth: 0,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: "y",
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: gridColor },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  y: { grid: { display: false } },
+                },
+              },
+            });
+        }
+      }
+
+      async function loadReportSummary() {
+        const { data } = await sb
+          .from("v_dashboard_summary")
+          .select("*")
+          .single();
+        if (!data) return;
+        const now = new Date().toLocaleDateString("en-PH", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        document.getElementById("rep-meta").textContent =
+          `HIV/AIDS & ART Registry of the Philippines (HARP) · Generated ${now}`;
+        document.getElementById("rep-summary").innerHTML =
+          `A total of <strong>${fmt(data.total_active_cases)} active cases</strong> are recorded in the HARP national registry. Cases reported this year: <strong>${fmt(data.cases_this_year)}</strong>. Currently on antiretroviral therapy (ART): <strong>${fmt(data.total_on_art)}</strong> (${data.overall_art_pct || 0}% coverage). Total AIDS-related deaths recorded: <strong>${fmt(data.total_deceased)}</strong>.`;
+      }
+
+      async function init() {
+        await Promise.all([
+          loadDashboardSummary(),
+          loadRegionDistribution(),
+          loadAlerts(),
+          loadUsers(),
+          loadCases(),
+          loadAnnualSummary(),
+          loadFacilityPerformance(),
+          loadAuditLogs(),
+          loadReportSummary(),
+        ]);
+        setTimeout(initCharts, 300);
+      }
+
+      (function () {
+        const bar = document.getElementById("ls-bar");
+        const status = document.getElementById("ls-status");
+        const screen = document.getElementById("loading-screen");
+        const app = document.getElementById("app-root");
+        const steps = [
+          { pct: 15, msg: "Verifying root credentials…" },
+          { pct: 35, msg: "Connecting to Supabase…" },
+          { pct: 55, msg: "Fetching surveillance data…" },
+          { pct: 72, msg: "Initializing admin modules…" },
+          { pct: 90, msg: "Applying security policies…" },
+          { pct: 100, msg: "Access granted." },
+        ];
+        let i = 0;
+        function tick() {
+          if (i >= steps.length) {
+            setTimeout(() => {
+              screen.classList.add("hidden");
+              app.classList.add("visible");
+              init();
+            }, 420);
+            return;
+          }
+          const s = steps[i++];
+          bar.style.width = s.pct + "%";
+          status.textContent = s.msg;
+          setTimeout(
+            tick,
+            i === steps.length ? 300 : 320 + Math.random() * 220,
+          );
+        }
+        setTimeout(tick, 300);
+      })();
+
+      if (window.innerWidth < 680)
+        document.getElementById("sidebar").classList.add("off");
+    </script>
   </body>
 </html>

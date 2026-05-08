@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DOH Surveillance | My Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap");
+      :root {
+        --bg: #050810;
+        --card: rgba(20, 27, 45, 0.7);
+        --accent: #c0392b;
+      }
+      body {
+        background-color: var(--bg);
+        color: #cbd5e1;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-image: radial-gradient(
+          circle at 50% 0%,
+          #1e1b4b 0%,
+          transparent 50%
+        );
+      }
+      #sidebar {
+        width: 280px;
+        background: rgba(10, 14, 26, 0.95);
+        backdrop-filter: blur(10px);
+        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #sidebar.off {
+        margin-left: -280px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 16px 28px;
+        color: #64748b;
+        font-size: 14px;
+        transition: 0.3s;
+        border-left: 3px solid transparent;
+      }
+      .nav-item:hover,
+      .nav-item.active {
+        color: #fff;
+        background: linear-gradient(
+          90deg,
+          rgba(192, 57, 43, 0.1) 0%,
+          transparent 100%
+        );
+        border-left: 3px solid var(--accent);
+      }
+      .glass-card {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        border-radius: 28px;
+      }
+
+      .field-group {
+        margin-bottom: 20px;
+      }
+      .field-label {
+        font-size: 10px;
+        font-weight: 800;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 6px;
+      }
+      .field-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        color: #e2e8f0;
+        padding: 13px 16px;
+        font-size: 14px;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        outline: none;
+        transition: 0.3s;
+      }
+      .field-input:focus {
+        border-color: #c0392b;
+        box-shadow: 0 0 12px rgba(192, 57, 43, 0.15);
+      }
+      .field-input:disabled {
+        color: #64748b;
+        cursor: not-allowed;
+      }
+      .field-input::placeholder {
+        color: #334155;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #c0392b, #e74c3c);
+        color: white;
+        padding: 13px 28px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        transition: 0.3s;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .btn-primary:hover {
+        opacity: 0.85;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(192, 57, 43, 0.3);
+      }
+      .btn-primary:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btn-ghost {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #94a3b8;
+        padding: 13px 24px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        transition: 0.3s;
+      }
+      .btn-ghost:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #e2e8f0;
+      }
+      .toast {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        padding: 14px 22px;
+        border-radius: 14px;
+        font-size: 13px;
+        font-weight: 700;
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        backdrop-filter: blur(12px);
+        border: 1px solid;
+        animation: slideUp 0.3s ease;
+      }
+      .toast.show {
+        display: flex;
+      }
+      .toast.success {
+        background: rgba(14, 159, 110, 0.15);
+        border-color: rgba(14, 159, 110, 0.3);
+        color: #2dd4bf;
+      }
+      .toast.error {
+        background: rgba(192, 57, 43, 0.15);
+        border-color: rgba(192, 57, 43, 0.3);
+        color: #ef4444;
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .avatar-ring {
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #c0392b, #e74c3c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 900;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 0 32px rgba(192, 57, 43, 0.3);
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .info-row:last-child {
+        border-bottom: none;
+      }
+      .info-key {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .info-val {
+        font-size: 13px;
+        color: #e2e8f0;
+        font-weight: 600;
+      }
+      .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .role-admin {
+        background: rgba(192, 57, 43, 0.12);
+        color: #ef4444;
+        border: 1px solid rgba(192, 57, 43, 0.25);
+      }
+      .role-health_officer {
+        background: rgba(26, 86, 219, 0.12);
+        color: #60a5fa;
+        border: 1px solid rgba(26, 86, 219, 0.25);
+      }
+      .role-researcher {
+        background: rgba(108, 71, 255, 0.12);
+        color: #a78bfa;
+        border: 1px solid rgba(108, 71, 255, 0.25);
+      }
+      .role-data_encoder {
+        background: rgba(180, 83, 9, 0.12);
+        color: #f59e0b;
+        border: 1px solid rgba(180, 83, 9, 0.25);
+      }
+      .role-viewer {
+        background: rgba(14, 159, 110, 0.12);
+        color: #2dd4bf;
+        border: 1px solid rgba(14, 159, 110, 0.25);
+      }
+      .section-divider {
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        margin: 28px 0;
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+      .tab-btn {
+        padding: 9px 20px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        transition: 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .tab-btn.active {
+        background: rgba(192, 57, 43, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(192, 57, 43, 0.3);
+      }
+      .tab-btn:not(.active) {
+        background: transparent;
+        color: #475569;
+        border: 1px solid transparent;
+      }
+      .tab-btn:not(.active):hover {
+        color: #94a3b8;
+      }
+      .tab-pane {
+        display: none;
+      }
+      .tab-pane.active {
+        display: block;
+      }
+      .strength-bar {
+        height: 4px;
+        border-radius: 99px;
+        transition:
+          width 0.4s ease,
+          background 0.4s ease;
+      }
+    </style>
+  </head>
+  <body class="flex h-screen overflow-hidden">
+    <div id="toast" class="toast">
+      <i id="toast-icon" class="fas fa-check-circle"></i
+      ><span id="toast-msg"></span>
+    </div>
+
+    <nav id="sidebar" class="flex flex-col border-r border-white/5">
+      <div class="p-10 mb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center"
+          >
+            <i class="fas fa-shield-virus text-white"></i>
+          </div>
+          <h1
+            class="font-black text-white leading-none tracking-tighter text-xl"
+          >
+            DOH<br /><span
+              class="text-slate-500 text-[10px] font-normal tracking-widest uppercase"
+              >HARP System</span
+            >
+          </h1>
+        </div>
+      </div>
+      <div class="flex-1">
+        <p
+          class="px-8 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4"
+        >
+          Main Navigation
+        </p>
+        <a href="user_dashboard.html" class="nav-item"
+          ><i class="fas fa-grid-2"></i> Dashboard</a
+        >
+        <a href="user_repository.html" class="nav-item"
+          ><i class="fas fa-folder-tree"></i> My Repository</a
+        >
+        <a href="user_statistics.html" class="nav-item"
+          ><i class="fas fa-chart-line"></i> Statistics</a
+        >
+        <a href="user_profile.html" class="nav-item active"
+          ><i class="fas fa-user-circle"></i> My Profile</a
+        >
+        <a href="user_reports.html" class="nav-item active"
+          ><i class="fas fa-file-lines"></i> Reports</a
+        >
+      </div>
+      <div class="p-8">
+        <button
+          onclick="logoutUser()"
+          class="w-full p-4 glass-card text-red-500 font-bold text-xs flex items-center justify-center gap-3 hover:bg-red-500/10 transition"
+        >
+          <i class="fas fa-power-off"></i> SIGN OUT
+        </button>
+      </div>
+    </nav>
+
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <header
+        class="h-24 flex items-center justify-between px-12 border-b border-white/5 shrink-0"
+      >
+        <div class="flex items-center gap-6">
+          <button
+            onclick="toggleSB()"
+            class="text-slate-500 hover:text-white transition"
+          >
+            <i class="fas fa-bars-staggered text-xl"></i>
+          </button>
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">
+              My Profile
+            </h2>
+            <p
+              class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5"
+            >
+              Account Settings & Security
+            </p>
+          </div>
+        </div>
+        <a
+          href="user_dashboard.html"
+          class="text-[10px] font-bold text-slate-500 hover:text-white transition uppercase tracking-widest hidden md:flex items-center gap-2"
+        >
+          <i class="fas fa-arrow-left text-xs"></i> Dashboard
+        </a>
+      </header>
+
+      <div class="flex-1 overflow-y-auto px-12 py-8">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <div class="glass-card p-8">
+            <div class="flex items-center gap-6">
+              <div class="avatar-ring" id="profile-avatar">?</div>
+              <div class="flex-1">
+                <h3 id="profile-name" class="text-2xl font-black text-white">
+                  Loading...
+                </h3>
+                <p id="profile-email" class="text-slate-500 text-sm mt-1">—</p>
+                <div class="flex items-center gap-3 mt-3">
+                  <span id="profile-role-badge" class="role-badge role-viewer"
+                    >viewer</span
+                  >
+                  <span
+                    id="profile-status"
+                    class="text-[10px] font-bold text-teal-400 flex items-center gap-1.5"
+                    ><i class="fas fa-circle text-[8px]"></i> Active
+                    Session</span
+                  >
+                </div>
+              </div>
+              <div class="text-right hidden md:block">
+                <p
+                  class="text-[10px] text-slate-600 uppercase tracking-widest font-bold mb-1"
+                >
+                  Member Since
+                </p>
+                <p id="profile-joined" class="text-sm font-bold text-slate-300">
+                  —
+                </p>
+                <p
+                  class="text-[10px] text-slate-600 uppercase tracking-widest font-bold mt-3 mb-1"
+                >
+                  Last Login
+                </p>
+                <p
+                  id="profile-lastlogin"
+                  class="text-sm font-bold text-slate-300"
+                >
+                  —
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card overflow-hidden">
+            <div class="flex gap-2 p-5 border-b border-white/5">
+              <button class="tab-btn active" onclick="switchTab('info')">
+                <i class="fas fa-id-card mr-2"></i>Account Info
+              </button>
+              <button class="tab-btn" onclick="switchTab('password')">
+                <i class="fas fa-lock mr-2"></i>Change Password
+              </button>
+              <button class="tab-btn" onclick="switchTab('session')">
+                <i class="fas fa-shield-halved mr-2"></i>Session
+              </button>
+            </div>
+
+            <div class="p-8">
+              <div id="tab-info" class="tab-pane active">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div class="field-group">
+                      <div class="field-label">Full Name</div>
+                      <input
+                        type="text"
+                        id="f-name"
+                        class="field-input"
+                        placeholder="Your full name"
+                      />
+                    </div>
+                    <div class="field-group">
+                      <div class="field-label">Email Address</div>
+                      <input
+                        type="email"
+                        id="f-email"
+                        class="field-input"
+                        disabled
+                      />
+                    </div>
+                    <div class="field-group">
+                      <div class="field-label">Role</div>
+                      <input
+                        type="text"
+                        id="f-role"
+                        class="field-input"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="glass-card p-6"
+                    style="background: rgba(255, 255, 255, 0.02)"
+                  >
+                    <p
+                      class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4"
+                    >
+                      Account Details
+                    </p>
+                    <div id="account-info-rows"></div>
+                  </div>
+                </div>
+                <hr class="section-divider" />
+                <div class="flex gap-3">
+                  <button
+                    onclick="saveProfile()"
+                    class="btn-primary"
+                    id="save-btn"
+                  >
+                    <i class="fas fa-floppy-disk mr-2"></i>Save Changes
+                  </button>
+                  <button onclick="cancelEdit()" class="btn-ghost">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <div id="tab-password" class="tab-pane">
+                <div class="max-w-md space-y-5">
+                  <div>
+                    <p
+                      class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"
+                    >
+                      Security Notice
+                    </p>
+                    <p class="text-sm text-slate-400">
+                      Password changes will be applied to your Supabase Auth
+                      account immediately. You will remain signed in on this
+                      device.
+                    </p>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">New Password</div>
+                    <div style="position: relative">
+                      <input
+                        type="password"
+                        id="pw-new"
+                        class="field-input"
+                        placeholder="Minimum 8 characters"
+                        style="padding-right: 48px"
+                        oninput="checkStrength()"
+                      />
+                      <button
+                        onclick="togglePw('pw-new')"
+                        style="
+                          position: absolute;
+                          right: 14px;
+                          top: 50%;
+                          transform: translateY(-50%);
+                          background: none;
+                          border: none;
+                          color: #475569;
+                          cursor: pointer;
+                          font-size: 14px;
+                        "
+                      >
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                    <div style="margin-top: 8px">
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: space-between;
+                          margin-bottom: 4px;
+                        "
+                      >
+                        <span
+                          id="strength-label"
+                          style="
+                            font-size: 10px;
+                            color: #475569;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                          "
+                          >Strength</span
+                        >
+                      </div>
+                      <div
+                        style="
+                          background: rgba(255, 255, 255, 0.04);
+                          border-radius: 99px;
+                          height: 4px;
+                          overflow: hidden;
+                        "
+                      >
+                        <div
+                          id="strength-bar"
+                          class="strength-bar"
+                          style="width: 0%; background: #c0392b"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Confirm New Password</div>
+                    <div style="position: relative">
+                      <input
+                        type="password"
+                        id="pw-confirm"
+                        class="field-input"
+                        placeholder="Re-enter new password"
+                        style="padding-right: 48px"
+                      />
+                      <button
+                        onclick="togglePw('pw-confirm')"
+                        style="
+                          position: absolute;
+                          right: 14px;
+                          top: 50%;
+                          transform: translateY(-50%);
+                          background: none;
+                          border: none;
+                          color: #475569;
+                          cursor: pointer;
+                          font-size: 14px;
+                        "
+                      >
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <button
+                      onclick="changePassword()"
+                      class="btn-primary"
+                      id="pw-btn"
+                    >
+                      <i class="fas fa-key mr-2"></i>Update Password
+                    </button>
+                  </div>
+                  <div
+                    id="pw-rules"
+                    style="
+                      background: rgba(255, 255, 255, 0.02);
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      border-radius: 12px;
+                      padding: 16px;
+                    "
+                  >
+                    <p
+                      style="
+                        font-size: 10px;
+                        font-weight: 800;
+                        color: #475569;
+                        text-transform: uppercase;
+                        letter-spacing: 0.1em;
+                        margin-bottom: 10px;
+                      "
+                    >
+                      Requirements
+                    </p>
+                    <div id="rule-length" class="pw-rule">
+                      <i
+                        class="fas fa-circle-xmark"
+                        style="color: #475569; font-size: 11px"
+                      ></i>
+                      <span style="font-size: 12px; color: #64748b"
+                        >At least 8 characters</span
+                      >
+                    </div>
+                    <div
+                      id="rule-upper"
+                      class="pw-rule"
+                      style="margin-top: 6px"
+                    >
+                      <i
+                        class="fas fa-circle-xmark"
+                        style="color: #475569; font-size: 11px"
+                      ></i>
+                      <span style="font-size: 12px; color: #64748b"
+                        >Uppercase letter</span
+                      >
+                    </div>
+                    <div
+                      id="rule-number"
+                      class="pw-rule"
+                      style="margin-top: 6px"
+                    >
+                      <i
+                        class="fas fa-circle-xmark"
+                        style="color: #475569; font-size: 11px"
+                      ></i>
+                      <span style="font-size: 12px; color: #64748b"
+                        >Contains a number</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="tab-session" class="tab-pane">
+                <div class="max-w-md space-y-5">
+                  <div
+                    class="glass-card p-6"
+                    style="background: rgba(255, 255, 255, 0.02)"
+                  >
+                    <p
+                      class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4"
+                    >
+                      Current Session
+                    </p>
+                    <div id="session-info-rows"></div>
+                  </div>
+                  <div
+                    style="
+                      background: rgba(239, 68, 68, 0.05);
+                      border: 1px solid rgba(239, 68, 68, 0.1);
+                      border-radius: 16px;
+                      padding: 24px;
+                    "
+                  >
+                    <p
+                      style="
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: #ef4444;
+                        margin-bottom: 6px;
+                      "
+                    >
+                      <i class="fas fa-triangle-exclamation mr-2"></i>Sign Out
+                    </p>
+                    <p
+                      style="
+                        font-size: 12px;
+                        color: #64748b;
+                        margin-bottom: 16px;
+                      "
+                    >
+                      Ending your session will require you to sign in again. All
+                      unsaved changes will be lost.
+                    </p>
+                    <button
+                      onclick="logoutUser()"
+                      style="
+                        background: rgba(192, 57, 43, 0.15);
+                        border: 1px solid rgba(192, 57, 43, 0.3);
+                        color: #ef4444;
+                        padding: 10px 20px;
+                        border-radius: 10px;
+                        font-size: 12px;
+                        font-weight: 800;
+                        cursor: pointer;
+                        font-family: &quot;Plus Jakarta Sans&quot;, sans-serif;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        transition: 0.2s;
+                      "
+                      onmouseover="
+                        this.style.background = 'rgba(192,57,43,0.25)'
+                      "
+                      onmouseout="
+                        this.style.background = 'rgba(192,57,43,0.15)'
+                      "
+                    >
+                      <i class="fas fa-power-off mr-2"></i>Sign Out Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const SUPABASE_URL = "https://vqwlrrhrgpiiualbetsf.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_dHKEoT8RgBRTwTYuQCJsbA_VzFJ0Jae";
+      const supabaseClient = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+      );
+
+      let currentUser = null;
+      let profileData = null;
+      let originalName = "";
+
+      function toggleSB() {
+        document.getElementById("sidebar").classList.toggle("off");
+      }
+
+      async function logoutUser() {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      }
+
+      function showToast(msg, type = "success") {
+        const t = document.getElementById("toast");
+        const m = document.getElementById("toast-msg");
+        const ic = document.getElementById("toast-icon");
+        t.className = "toast show " + type;
+        m.textContent = msg;
+        ic.className =
+          "fas " +
+          (type === "success" ? "fa-check-circle" : "fa-circle-exclamation");
+        setTimeout(() => (t.className = "toast"), 3500);
+      }
+
+      function switchTab(id) {
+        document
+          .querySelectorAll(".tab-pane")
+          .forEach((p) => p.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("tab-" + id).classList.add("active");
+        event.currentTarget.classList.add("active");
+      }
+
+      function togglePw(id) {
+        const el = document.getElementById(id);
+        el.type = el.type === "password" ? "text" : "password";
+      }
+
+      function checkStrength() {
+        const pw = document.getElementById("pw-new").value;
+        const bar = document.getElementById("strength-bar");
+        const label = document.getElementById("strength-label");
+        let score = 0;
+        const rules = [
+          { id: "rule-length", test: pw.length >= 8 },
+          { id: "rule-upper", test: /[A-Z]/.test(pw) },
+          { id: "rule-number", test: /[0-9]/.test(pw) },
+        ];
+        rules.forEach((r) => {
+          const el = document.getElementById(r.id);
+          const icon = el.querySelector("i");
+          score += r.test ? 1 : 0;
+          icon.className = r.test
+            ? "fas fa-circle-check"
+            : "fas fa-circle-xmark";
+          icon.style.color = r.test ? "#2dd4bf" : "#475569";
+          el.querySelector("span").style.color = r.test ? "#94a3b8" : "#64748b";
+        });
+        if (pw.length > 12 && /[^a-zA-Z0-9]/.test(pw)) score++;
+        const configs = ["", "#c0392b", "#f59e0b", "#2dd4bf", "#0e9f6e"];
+        const labels = ["", "Weak", "Fair", "Strong", "Very Strong"];
+        bar.style.width = (score / 4) * 100 + "%";
+        bar.style.background = configs[score] || "#c0392b";
+        label.textContent = labels[score] || "Strength";
+        label.style.color = configs[score] || "#475569";
+      }
+
+      function initials(name) {
+        if (!name) return "?";
+        return name
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase();
+      }
+
+      function formatDate(ts) {
+        if (!ts) return "—";
+        return new Date(ts).toLocaleDateString("en-PH", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      }
+
+      function infoRow(label, val) {
+        return `<div class="info-row"><span class="info-key">${label}</span><span class="info-val">${val || "—"}</span></div>`;
+      }
+
+      async function loadProfile() {
+        const {
+          data: { session },
+        } = await supabaseClient.auth.getSession();
+        if (!session) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        currentUser = session.user;
+
+        const { data: profile } = await supabaseClient
+          .from("users")
+          .select("*")
+          .eq("id", currentUser.id)
+          .single();
+
+        profileData = profile;
+        const name =
+          profile?.full_name ||
+          currentUser.user_metadata?.full_name ||
+          currentUser.email?.split("@")[0] ||
+          "User";
+        const role = profile?.role || "viewer";
+        const email = currentUser.email || "—";
+        originalName = name;
+
+        document.getElementById("profile-avatar").textContent = initials(name);
+        document.getElementById("profile-name").textContent = name;
+        document.getElementById("profile-email").textContent = email;
+        document.getElementById("profile-joined").textContent = formatDate(
+          currentUser.created_at,
+        );
+        document.getElementById("profile-lastlogin").textContent = formatDate(
+          currentUser.last_sign_in_at,
+        );
+
+        const badge = document.getElementById("profile-role-badge");
+        badge.textContent = role.replace(/_/g, " ");
+        badge.className = "role-badge role-" + role;
+
+        document.getElementById("f-name").value = name;
+        document.getElementById("f-email").value = email;
+        document.getElementById("f-role").value = role
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+
+        document.getElementById("account-info-rows").innerHTML =
+          infoRow("User ID", currentUser.id.slice(0, 18) + "…") +
+          infoRow("Role", role.replace(/_/g, " ")) +
+          infoRow(
+            "Account Status",
+            profile?.is_active !== false ? "Active" : "Inactive",
+          ) +
+          infoRow(
+            "Email Confirmed",
+            currentUser.email_confirmed_at ? "Yes" : "No",
+          ) +
+          infoRow("Created", formatDate(currentUser.created_at));
+
+        document.getElementById("session-info-rows").innerHTML =
+          infoRow("Session Token", session.access_token.slice(0, 20) + "…") +
+          infoRow("Expires", formatDate(new Date(session.expires_at * 1000))) +
+          infoRow("Provider", currentUser.app_metadata?.provider || "email") +
+          infoRow("User ID", currentUser.id.slice(0, 18) + "…");
+      }
+
+      function cancelEdit() {
+        document.getElementById("f-name").value = originalName;
+      }
+
+      async function saveProfile() {
+        const btn = document.getElementById("save-btn");
+        const newName = document.getElementById("f-name").value.trim();
+        if (!newName) {
+          showToast("Name cannot be empty.", "error");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+        const { error: authErr } = await supabaseClient.auth.updateUser({
+          data: { full_name: newName },
+        });
+
+        const { error: dbErr } = await supabaseClient
+          .from("users")
+          .update({ full_name: newName })
+          .eq("id", currentUser.id);
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-floppy-disk mr-2"></i>Save Changes';
+
+        if (authErr || dbErr) {
+          showToast("Failed to save changes.", "error");
+        } else {
+          originalName = newName;
+          document.getElementById("profile-name").textContent = newName;
+          document.getElementById("profile-avatar").textContent =
+            initials(newName);
+          showToast("Profile updated successfully.");
+        }
+      }
+
+      async function changePassword() {
+        const pw = document.getElementById("pw-new").value;
+        const confirm = document.getElementById("pw-confirm").value;
+        const btn = document.getElementById("pw-btn");
+
+        if (!pw || pw.length < 8) {
+          showToast("Password must be at least 8 characters.", "error");
+          return;
+        }
+        if (pw !== confirm) {
+          showToast("Passwords do not match.", "error");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML =
+          '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+
+        const { error } = await supabaseClient.auth.updateUser({
+          password: pw,
+        });
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-key mr-2"></i>Update Password';
+
+        if (error) {
+          showToast(error.message, "error");
+        } else {
+          document.getElementById("pw-new").value = "";
+          document.getElementById("pw-confirm").value = "";
+          document.getElementById("strength-bar").style.width = "0%";
+          document.getElementById("strength-label").textContent = "Strength";
+          showToast("Password updated successfully.");
+        }
+      }
+
+      loadProfile();
+
+      if (window.innerWidth < 680)
+        document.getElementById("sidebar").classList.add("off");
+    </script>
+  </body>
+</html>

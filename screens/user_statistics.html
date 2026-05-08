@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DOH Surveillance | Statistics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap");
+      :root {
+        --bg: #050810;
+        --card: rgba(20, 27, 45, 0.7);
+        --accent: #c0392b;
+      }
+      body {
+        background-color: var(--bg);
+        color: #cbd5e1;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-image: radial-gradient(
+          circle at 50% 0%,
+          #1e1b4b 0%,
+          transparent 50%
+        );
+      }
+      #sidebar {
+        width: 280px;
+        background: rgba(10, 14, 26, 0.95);
+        backdrop-filter: blur(10px);
+        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #sidebar.off {
+        margin-left: -280px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 16px 28px;
+        color: #64748b;
+        font-size: 14px;
+        transition: 0.3s;
+        border-left: 3px solid transparent;
+      }
+      .nav-item:hover,
+      .nav-item.active {
+        color: #fff;
+        background: linear-gradient(
+          90deg,
+          rgba(192, 57, 43, 0.1) 0%,
+          transparent 100%
+        );
+        border-left: 3px solid var(--accent);
+      }
+      .glass-card {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        border-radius: 28px;
+      }
+
+      .stat-mini {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 18px;
+        padding: 22px 24px;
+      }
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+      }
+      .bar-track {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 99px;
+        height: 8px;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #c0392b, #e74c3c);
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .bar-fill.teal {
+        background: linear-gradient(90deg, #0f766e, #2dd4bf);
+      }
+      .bar-fill.blue {
+        background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+      }
+      .bar-fill.amber {
+        background: linear-gradient(90deg, #b45309, #f59e0b);
+      }
+      .bar-fill.purple {
+        background: linear-gradient(90deg, #6d28d9, #a78bfa);
+      }
+      .seg-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .seg-row:last-child {
+        border-bottom: none;
+      }
+      .seg-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .seg-label {
+        font-size: 12px;
+        color: #94a3b8;
+        flex: 1;
+        text-transform: capitalize;
+      }
+      .seg-val {
+        font-size: 13px;
+        font-weight: 700;
+        color: #e2e8f0;
+      }
+      .seg-pct {
+        font-size: 11px;
+        color: #475569;
+        font-family: monospace;
+        width: 36px;
+        text-align: right;
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+      .trend-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 99px;
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .trend-up {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+      }
+      .trend-down {
+        background: rgba(45, 212, 191, 0.1);
+        color: #2dd4bf;
+      }
+      canvas {
+        max-height: 240px;
+      }
+    </style>
+  </head>
+  <body class="flex h-screen overflow-hidden">
+    <nav id="sidebar" class="flex flex-col border-r border-white/5">
+      <div class="p-10 mb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center"
+          >
+            <i class="fas fa-shield-virus text-white"></i>
+          </div>
+          <h1
+            class="font-black text-white leading-none tracking-tighter text-xl"
+          >
+            DOH<br /><span
+              class="text-slate-500 text-[10px] font-normal tracking-widest uppercase"
+              >HARP System</span
+            >
+          </h1>
+        </div>
+      </div>
+      <div class="flex-1">
+        <p
+          class="px-8 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4"
+        >
+          Main Navigation
+        </p>
+        <a href="user_dashboard.html" class="nav-item"
+          ><i class="fas fa-grid-2"></i> Dashboard</a
+        >
+        <a href="user_repository.html" class="nav-item"
+          ><i class="fas fa-folder-tree"></i> My Repository</a
+        >
+        <a href="user_statistics.html" class="nav-item active"
+          ><i class="fas fa-chart-line"></i> Statistics</a
+        >
+        <a href="user_profile.html" class="nav-item"
+          ><i class="fas fa-user-circle"></i> My Profile</a
+        >
+        <a href="user_reports.html" class="nav-item active"
+          ><i class="fas fa-file-lines"></i> Reports</a
+        >
+      </div>
+      <div class="p-8">
+        <button
+          onclick="logoutUser()"
+          class="w-full p-4 glass-card text-red-500 font-bold text-xs flex items-center justify-center gap-3 hover:bg-red-500/10 transition"
+        >
+          <i class="fas fa-power-off"></i> SIGN OUT
+        </button>
+      </div>
+    </nav>
+
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <header
+        class="h-24 flex items-center justify-between px-12 border-b border-white/5 shrink-0"
+      >
+        <div class="flex items-center gap-6">
+          <button
+            onclick="toggleSB()"
+            class="text-slate-500 hover:text-white transition"
+          >
+            <i class="fas fa-bars-staggered text-xl"></i>
+          </button>
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">
+              Epidemiological Statistics
+            </h2>
+            <p
+              class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5"
+            >
+              National HIV/AIDS Surveillance Data
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <a
+            href="user_dashboard.html"
+            class="text-[10px] font-bold text-slate-500 hover:text-white transition uppercase tracking-widest hidden md:flex items-center gap-2"
+          >
+            <i class="fas fa-arrow-left text-xs"></i> Dashboard
+          </a>
+          <span
+            id="data-year"
+            class="text-[10px] font-mono text-slate-500 bg-white/5 px-3 py-1.5 rounded-lg"
+            >Loading...</span
+          >
+        </div>
+      </header>
+
+      <div class="flex-1 overflow-y-auto px-12 py-8 space-y-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+          <div class="stat-mini">
+            <p
+              class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3"
+            >
+              Total Cases
+            </p>
+            <p id="s-total" class="text-3xl font-black text-white">—</p>
+            <p class="text-[10px] text-slate-600 mt-1">Active in registry</p>
+          </div>
+          <div class="stat-mini">
+            <p
+              class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3"
+            >
+              On ART
+            </p>
+            <p id="s-art" class="text-3xl font-black text-teal-400">—</p>
+            <p id="s-art-pct" class="text-[10px] text-teal-700 mt-1">
+              — coverage
+            </p>
+          </div>
+          <div class="stat-mini">
+            <p
+              class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3"
+            >
+              This Year
+            </p>
+            <p id="s-year" class="text-3xl font-black text-white">—</p>
+            <p class="text-[10px] text-slate-600 mt-1">New diagnoses 2026</p>
+          </div>
+          <div class="stat-mini">
+            <p
+              class="text-[10px] font-black text-red-900 uppercase tracking-widest mb-3"
+            >
+              Deceased
+            </p>
+            <p id="s-deceased" class="text-3xl font-black text-red-600">—</p>
+            <p class="text-[10px] text-slate-600 mt-1">AIDS-related deaths</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-card p-8">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <p
+                  class="text-[10px] font-black text-slate-500 uppercase tracking-widest"
+                >
+                  Cases by Year
+                </p>
+                <p class="text-white font-bold mt-0.5">Annual Trend</p>
+              </div>
+              <i class="fas fa-chart-line text-slate-700 text-lg"></i>
+            </div>
+            <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
+          </div>
+
+          <div class="glass-card p-8">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <p
+                  class="text-[10px] font-black text-slate-500 uppercase tracking-widest"
+                >
+                  Transmission Mode
+                </p>
+                <p class="text-white font-bold mt-0.5">Distribution</p>
+              </div>
+              <i class="fas fa-circle-nodes text-slate-700 text-lg"></i>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chart-transmission"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-card p-8">
+            <p
+              class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1"
+            >
+              ART Status
+            </p>
+            <p class="text-white font-bold mb-6">Treatment Coverage</p>
+            <div id="art-breakdown" class="space-y-1"></div>
+          </div>
+
+          <div class="glass-card p-8">
+            <p
+              class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1"
+            >
+              HIV Stage
+            </p>
+            <p class="text-white font-bold mb-6">Stage at Diagnosis</p>
+            <div id="stage-breakdown" class="space-y-1"></div>
+          </div>
+
+          <div class="glass-card p-8">
+            <p
+              class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1"
+            >
+              Demographics
+            </p>
+            <p class="text-white font-bold mb-6">Gender Distribution</p>
+            <div id="gender-breakdown" class="space-y-1"></div>
+            <div class="mt-6 pt-5 border-t border-white/5">
+              <p
+                class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3"
+              >
+                Age Groups
+              </p>
+              <div id="age-breakdown" class="space-y-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card p-8">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <p
+                class="text-[10px] font-black text-slate-500 uppercase tracking-widest"
+              >
+                Regional Distribution
+              </p>
+              <p class="text-white font-bold mt-0.5">Cases by Region</p>
+            </div>
+            <i class="fas fa-map text-slate-700 text-lg"></i>
+          </div>
+          <div
+            id="region-breakdown"
+            class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1"
+          ></div>
+        </div>
+
+        <div class="glass-card p-8">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <p
+                class="text-[10px] font-black text-slate-500 uppercase tracking-widest"
+              >
+                Viral Load Status
+              </p>
+              <p class="text-white font-bold mt-0.5">Treatment Response</p>
+            </div>
+            <i class="fas fa-virus text-slate-700 text-lg"></i>
+          </div>
+          <div
+            id="vl-breakdown"
+            class="grid grid-cols-2 md:grid-cols-5 gap-4"
+          ></div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const SUPABASE_URL = "https://vqwlrrhrgpiiualbetsf.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_dHKEoT8RgBRTwTYuQCJsbA_VzFJ0Jae";
+      const supabaseClient = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+      );
+
+      function toggleSB() {
+        document.getElementById("sidebar").classList.toggle("off");
+      }
+      async function logoutUser() {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      }
+      function fmt(n) {
+        return n != null ? Number(n).toLocaleString() : "—";
+      }
+
+      function countBy(arr, key) {
+        return arr.reduce((acc, item) => {
+          const v = item[key] || "unknown";
+          acc[v] = (acc[v] || 0) + 1;
+          return acc;
+        }, {});
+      }
+
+      function renderBreakdown(containerId, counts, colorMap, total) {
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        const el = document.getElementById(containerId);
+        el.innerHTML = sorted
+          .map(([key, val]) => {
+            const pct = total ? Math.round((val / total) * 100) : 0;
+            const color = colorMap[key] || "#475569";
+            return `<div class="seg-row">
+            <div class="seg-dot" style="background:${color}"></div>
+            <span class="seg-label">${key.replace(/_/g, " ")}</span>
+            <span class="seg-val">${fmt(val)}</span>
+            <span class="seg-pct">${pct}%</span>
+          </div>`;
+          })
+          .join("");
+      }
+
+      function renderBars(containerId, counts, colorClass, total) {
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        const max = sorted[0]?.[1] || 1;
+        const el = document.getElementById(containerId);
+        el.innerHTML = sorted
+          .map(([key, val]) => {
+            const w = Math.round((val / max) * 100);
+            const pct = total ? Math.round((val / total) * 100) : 0;
+            return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:11px;color:#94a3b8;text-transform:capitalize">${key.replace(/_/g, " ")}</span>
+              <span style="font-size:11px;color:#e2e8f0;font-weight:700">${fmt(val)} <span style="color:#475569;font-weight:400">${pct}%</span></span>
+            </div>
+            <div class="bar-track"><div class="bar-fill ${colorClass}" style="width:${w}%"></div></div>
+          </div>`;
+          })
+          .join("");
+      }
+
+      function renderRegionBars(containerId, counts, total) {
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        const max = sorted[0]?.[1] || 1;
+        const el = document.getElementById(containerId);
+        el.innerHTML = sorted
+          .map(([key, val]) => {
+            const w = Math.round((val / max) * 100);
+            const pct = total ? Math.round((val / total) * 100) : 0;
+            const shortName = key
+              .replace("Region ", "R")
+              .split("—")[0]
+              .trim()
+              .split("–")[0]
+              .trim();
+            return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:11px;color:#94a3b8" title="${key}">${shortName}</span>
+              <span style="font-size:11px;color:#e2e8f0;font-weight:700">${fmt(val)} <span style="color:#475569;font-weight:400">${pct}%</span></span>
+            </div>
+            <div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div>
+          </div>`;
+          })
+          .join("");
+      }
+
+      function renderVLCards(containerId, counts, total) {
+        const vlColors = {
+          undetectable: {
+            bg: "rgba(45,212,191,0.08)",
+            border: "rgba(45,212,191,0.2)",
+            text: "#2dd4bf",
+            icon: "fa-circle-check",
+          },
+          low: {
+            bg: "rgba(99,102,241,0.08)",
+            border: "rgba(99,102,241,0.2)",
+            text: "#818cf8",
+            icon: "fa-arrow-trend-down",
+          },
+          detectable: {
+            bg: "rgba(245,158,11,0.08)",
+            border: "rgba(245,158,11,0.2)",
+            text: "#f59e0b",
+            icon: "fa-circle-exclamation",
+          },
+          high: {
+            bg: "rgba(239,68,68,0.08)",
+            border: "rgba(239,68,68,0.2)",
+            text: "#ef4444",
+            icon: "fa-triangle-exclamation",
+          },
+          not_tested: {
+            bg: "rgba(71,85,105,0.08)",
+            border: "rgba(71,85,105,0.2)",
+            text: "#64748b",
+            icon: "fa-circle-minus",
+          },
+        };
+        const el = document.getElementById(containerId);
+        el.innerHTML = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, val]) => {
+            const s = vlColors[key] || {
+              bg: "rgba(71,85,105,0.08)",
+              border: "rgba(71,85,105,0.2)",
+              text: "#64748b",
+              icon: "fa-circle",
+            };
+            const pct = total ? Math.round((val / total) * 100) : 0;
+            return `<div style="background:${s.bg};border:1px solid ${s.border};border-radius:16px;padding:18px 20px;text-align:center">
+            <i class="fas ${s.icon}" style="color:${s.text};font-size:20px;margin-bottom:10px;display:block"></i>
+            <div style="font-size:22px;font-weight:800;color:#e2e8f0;margin-bottom:4px">${fmt(val)}</div>
+            <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;font-weight:700">${key.replace(/_/g, " ")}</div>
+            <div style="font-size:11px;color:${s.text};font-weight:700;margin-top:4px">${pct}%</div>
+          </div>`;
+          })
+          .join("");
+      }
+
+      function initTrendChart(yearCounts) {
+        const years = Object.keys(yearCounts).sort();
+        const vals = years.map((y) => yearCounts[y]);
+        const ctx = document.getElementById("chart-trend").getContext("2d");
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: years,
+            datasets: [
+              {
+                label: "Cases",
+                data: vals,
+                backgroundColor: years.map((_, i) =>
+                  i === years.length - 1
+                    ? "rgba(192,57,43,0.7)"
+                    : "rgba(255,255,255,0.07)",
+                ),
+                borderColor: years.map((_, i) =>
+                  i === years.length - 1 ? "#e74c3c" : "rgba(255,255,255,0.12)",
+                ),
+                borderWidth: 1,
+                borderRadius: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                ticks: { color: "#475569", font: { size: 11 } },
+                grid: { color: "transparent" },
+              },
+              y: {
+                ticks: { color: "#475569", font: { size: 11 } },
+                grid: { color: "rgba(255,255,255,0.04)" },
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      }
+
+      function initTransChart(transmissionCounts) {
+        const labels = Object.keys(transmissionCounts);
+        const vals = labels.map((l) => transmissionCounts[l]);
+        const colors = [
+          "#c0392b",
+          "#1a56db",
+          "#0e9f6e",
+          "#b45309",
+          "#6c47ff",
+          "#e74c3c",
+        ];
+        const ctx = document
+          .getElementById("chart-transmission")
+          .getContext("2d");
+        new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels,
+            datasets: [
+              {
+                data: vals,
+                backgroundColor: colors.map((c) => c + "cc"),
+                borderColor: colors,
+                borderWidth: 2,
+                hoverOffset: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  color: "#64748b",
+                  font: { size: 11 },
+                  boxWidth: 10,
+                  padding: 12,
+                },
+              },
+            },
+            cutout: "65%",
+          },
+        });
+      }
+
+      async function loadStatistics() {
+        const { data, error } = await supabaseClient
+          .from("hiv_cases")
+          .select(
+            "year_reported, gender, transmission_mode, art_status, hiv_stage, viral_load_status, age_group, region_id, is_deceased, is_active, regions(region_name)",
+          )
+          .eq("is_active", true);
+
+        if (error || !data) return;
+
+        const total = data.length;
+        const onArt = data.filter((c) => c.art_status === "on_art").length;
+        const thisYear = data.filter(
+          (c) => c.year_reported === new Date().getFullYear(),
+        ).length;
+        const deceased = data.filter((c) => c.is_deceased).length;
+        const artPct = total ? Math.round((onArt / total) * 100) : 0;
+
+        document.getElementById("s-total").textContent = fmt(total);
+        document.getElementById("s-art").textContent = fmt(onArt);
+        document.getElementById("s-art-pct").textContent =
+          `${artPct}% coverage`;
+        document.getElementById("s-year").textContent = fmt(thisYear);
+        document.getElementById("s-deceased").textContent = fmt(deceased);
+        document.getElementById("data-year").textContent =
+          `${total} records · ${new Date().getFullYear()}`;
+
+        const yearCounts = countBy(data, "year_reported");
+        const transCounts = countBy(data, "transmission_mode");
+        const artCounts = countBy(data, "art_status");
+        const stageCounts = countBy(data, "hiv_stage");
+        const genderCounts = countBy(data, "gender");
+        const ageCounts = countBy(data, "age_group");
+        const vlCounts = countBy(data, "viral_load_status");
+
+        const regionCounts = {};
+        data.forEach((c) => {
+          const name = c.regions?.region_name || "Unknown";
+          regionCounts[name] = (regionCounts[name] || 0) + 1;
+        });
+
+        initTrendChart(yearCounts);
+        initTransChart(transCounts);
+
+        const artColors = {
+          on_art: "#2dd4bf",
+          not_yet: "#f59e0b",
+          lost_to_followup: "#94a3b8",
+          deceased: "#ef4444",
+          transferred: "#a78bfa",
+        };
+        const stageColors = {
+          stage1: "#2dd4bf",
+          stage2: "#f59e0b",
+          stage3: "#ef4444",
+          aids: "#c0392b",
+        };
+        const genderColors = {
+          male: "#60a5fa",
+          female: "#f472b6",
+          transgender: "#a78bfa",
+          other: "#94a3b8",
+        };
+        const ageColors = {
+          under15: "#f472b6",
+          "15to24": "#60a5fa",
+          "25to34": "#2dd4bf",
+          "35to44": "#f59e0b",
+          "45plus": "#c0392b",
+        };
+
+        renderBreakdown("art-breakdown", artCounts, artColors, total);
+        renderBreakdown("stage-breakdown", stageCounts, stageColors, total);
+        renderBreakdown("gender-breakdown", genderCounts, genderColors, total);
+        renderBars("age-breakdown", ageCounts, "teal", total);
+        renderRegionBars("region-breakdown", regionCounts, total);
+        renderVLCards("vl-breakdown", vlCounts, total);
+      }
+
+      loadStatistics();
+
+      if (window.innerWidth < 680)
+        document.getElementById("sidebar").classList.add("off");
+    </script>
+  </body>
+</html>
